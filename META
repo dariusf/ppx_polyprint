@@ -1,0 +1,5 @@
+version = "0.0.0"
+description = "A polymorphic print function"
+ppx = "./ppx_polyprint.native"
+archive(byte) = "polyPrint.cma"
+archive(native) = "polyPrint.cmxa"

@@ -1,0 +1,16 @@
+opam-version: "1.2"
+name: "ppx_polyprint"
+version: "0.0.0"
+maintainer: "Darius Foo <darius.foo.tw@gmail.com>"
+authors: "Darius Foo <darius.foo.tw@gmail.com>"
+homepage: "https://github.com/dariusf/ppx_polyprint"
+bug-reports: "https://github.com/dariusf/ppx_polyprint/issues"
+license: "MIT"
+dev-repo: "https://github.com/dariusf/ppx_polyprint"
+depends: [
+  "ocamlfind" {>= "1.5.0"}
+]
+install: [[make "install"]]
+remove: [[make "remove"]]
+build: [[make]]
+ocaml-version: [>= "4.02.3"]

@@ -1,0 +1,5 @@
+
+true: bin_annot, safe_string
+
+<src/ppx_polyprint.*>: package(compiler-libs.common typpx)
+<test/*.{ml,byte,native}>: debug, package(alcotest)
