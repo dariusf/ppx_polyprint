@@ -1,6 +1,45 @@
 
 open PolyPrint
 
+let test_case group name expected actual =
+  group, `Quick, fun () -> Alcotest.(check string) name expected actual
+
+let simple = [
+  "int", to_string 1, "1";
+  "bool", to_string false, "false";
+  "string", to_string "something", "something";
+  "char", to_string 'a', "a";
+  "float", to_string 1.2, "1.2";
+  "function", to_string (fun x -> x), "<function>";
+  "tuple", to_string (1, 2), "(1, 2)";
+  "tuple3", to_string (1, 2, 3), "(1, 2, 3)";
+  "tuple4", to_string (1, 2, 3, 4), "(1, 2, 3, 4)";
+  "tuple5", to_string (1, 2, 3, 4, 5), "(1, 2, 3, 4, 5)";
+  "tuple6", to_string (1, 2, 3, 4, 5, 6), "(1, 2, 3, 4, 5, 6)";
+  "tuple7", to_string (1, 2, 3, 4, 5, 6, 7), "(1, 2, 3, 4, 5, 6, 7)";
+  "int list", to_string [1; 2], "[1; 2]";
+  "bool list", to_string [true; false], "[true; false]";
+  "exn", to_string (Failure "what"), "Failure(\"what\")"
+]
+
+type ('a, 'b) either = Left of 'a | Right of 'b
+
+let show_either pr_a pr_b e =
+  match e with
+  | Left a -> "Left " ^ pr_a a
+  | Right b -> "Right " ^ pr_b b
+
+let compound = [
+  "int tuple list", to_string [(1, 2)], "[(1, 2)]";
+  "nested tuples", to_string (1, (2, (3, 4))), "(1, (2, (3, 4)))";
+  "heterogeous tuples", to_string (1, "klasjd", true), "(1, klasjd, true)";
+  "option none", to_string None, "None";
+  "option int", to_string (Some 1), "Some 1";
+  "option string", to_string (Some "two"), "Some two";
+  "user-defined either 1 (defaults to show_either)", to_string (Left 1), "Left 1";
+  "user-defined either 2", to_string (Right "hello"), "Right hello";
+]
+
 module Something : sig
   type t
   val thing : t
@@ -12,62 +51,30 @@ struct
   let show_t = string_of_int
 end
 
-type ('a, 'b) either = Left of 'a | Right of 'b
+let qualified = [
+  "qualified primitive value", to_string Something.show_t, "<function>";
+  "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
+]
 
-let show_either pr_a pr_b e =
-  match e with
-  | Left a -> "Left " ^ pr_a a
-  | Right b -> "Right " ^ pr_b b
+let string_form_of x = to_string x
+let wrap_and_stringify x = to_string (Some x)
+
+let type_variables = [
+  "polymorphic to_string 1", string_form_of 1, "<polymorphic>";
+  "polymorphic to_string 2", string_form_of (None), "<polymorphic>";
+  "polymorphic to_string 3", to_string (wrap_and_stringify 1), "Some <polymorphic>";
+  "polymorphic to_string 4", to_string (wrap_and_stringify None), "Some <polymorphic>";
+]
+
+let uncurry3 f (a, b, c) = f a b c
+
+let tests =
+  let open List in [
+  map (uncurry3 (test_case "simple")) simple;
+  map (uncurry3 (test_case "compound")) compound;
+  map (uncurry3 (test_case "qualified")) qualified;
+  map (uncurry3 (test_case "type variables")) type_variables;
+] |> concat
 
 let () =
-  (* simple *)
-  assert (to_string 1 = "1");
-  assert (to_string false = "false");
-  assert (to_string "something" = "something");
-  assert (to_string 'a' = "a");
-  assert (to_string 1.2 = "1.2");
-  assert (to_string (fun x -> x) = "<function>");
-  assert (to_string (1, 2) = "(1, 2)");
-  assert (to_string (1, 2, 3) = "(1, 2, 3)");
-  assert (to_string (1, 2, 3, 4) = "(1, 2, 3, 4)");
-  assert (to_string (1, 2, 3, 4, 5) = "(1, 2, 3, 4, 5)");
-  assert (to_string (1, 2, 3, 4, 5, 6) = "(1, 2, 3, 4, 5, 6)");
-  assert (to_string (1, 2, 3, 4, 5, 6, 7) = "(1, 2, 3, 4, 5, 6, 7)");
-  assert (to_string [1; 2] = "[1; 2]");
-  assert (to_string (Failure "what") = "Failure(\"what\")");
-
-  (* compound *)
-  assert (to_string [(1, 2)] = "[(1, 2)]");
-  assert (to_string (1, (2, (3, (4, (5, (6, (7))))))) = "(1, (2, (3, (4, (5, (6, 7))))))");
-  assert (to_string (1, "klasjd", true) = "(1, klasjd, true)");
-  assert (to_string None = "None");
-  assert (to_string (Some 1) = "Some 1");
-  assert (to_string (Some "two") = "Some two");
-  assert (to_string (Left 1) = "Left 1");
-  assert (to_string (Right "hello") = "Right hello");
-
-  (* qualified *)
-  assert (to_string Something.thing = "1");
-  assert (to_string Something.show_t = "<function>");
-
-  (* aliases *)
-  assert (string_of 1 = "1");
-  print 1;
-  print "something";
-
-  (* type variables *)
-  let id x =
-    to_string x
-  in
-  assert (id 1 = "<polymorphic>");
-  assert (id (None) = "<polymorphic>");
-
-  let wrap x = Some x in
-  assert (to_string (wrap 1) = "Some 1");
-  assert (to_string (wrap None) = "Some None");
-
-  let wrap x = to_string (Some x) in
-  assert (to_string (wrap 1) = "Some <polymorphic>");
-  assert (to_string (wrap None) = "Some <polymorphic>");
-
-  print_endline "\n\nall good!\n\n"
+  Alcotest.run "ppx_polyprint" ["all", tests]

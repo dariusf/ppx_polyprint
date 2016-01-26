@@ -27,7 +27,8 @@ runtime:
 
 test: all
 	rm -rf _build/test/
-	$(OCB) -classic-display test/$(TEST).byte --
+	$(OCB) test/$(TEST).byte
+	./$(TEST).byte --show-errors
 
 doc:
 	$(OCB) -use-ocamlfind doc/api.docdir/index.html \

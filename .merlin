@@ -1,2 +1,4 @@
-
 B _build/**
+PKG alcotest
+PKG compiler-libs.common
+PKG typpx
