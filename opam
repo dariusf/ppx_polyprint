@@ -8,7 +8,9 @@ bug-reports: "https://github.com/dariusf/ppx_polyprint/issues"
 license: "MIT"
 dev-repo: "https://github.com/dariusf/ppx_polyprint"
 depends: [
-  "ocamlfind" {>= "1.5.0"}
+  "ocamlfind"
+  "alcotest" { >= "0.4.6" }
+  "typpx" { >= "1.0.2" }
 ]
 install: [[make "install"]]
 remove: [[make "remove"]]
