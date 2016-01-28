@@ -4,6 +4,11 @@ open PolyPrint
 let test_case group name expected actual =
   group, `Quick, fun () -> Alcotest.(check string) name expected actual
 
+type record = { a : int; b : string }
+
+let show_record { a; b } =
+  "{ a = " ^ string_of_int a ^ "; b = " ^ b ^ " }"
+
 let simple = [
   "int", to_string 1, "1";
   "bool", to_string false, "false";
@@ -19,7 +24,8 @@ let simple = [
   "tuple7", to_string (1, 2, 3, 4, 5, 6, 7), "(1, 2, 3, 4, 5, 6, 7)";
   "int list", to_string [1; 2], "[1; 2]";
   "bool list", to_string [true; false], "[true; false]";
-  "exn", to_string (Failure "what"), "Failure(\"what\")"
+  "exn", to_string (Failure "what"), "Failure(\"what\")";
+  "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }";
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b
@@ -44,16 +50,29 @@ module Something : sig
   type t
   val thing : t
   val show_t : t -> string
+
+  type 'a s = Cons of 'a * 'a s | Nil
+  (* val thing_s : 'a s *)
+  val show_s : ('a -> string) -> 'a s -> string
 end =
 struct
   type t = int
   let thing = 1
   let show_t = string_of_int
+
+  type 'a s = Cons of 'a * 'a s | Nil
+  (* let thing_s : int s = Cons (1, Cons (2, Nil)) *)
+  let rec show_s pr s =
+    match s with
+    | Cons (a, rest) -> pr a ^ " " ^ show_s pr rest
+    | Nil -> ""
 end
 
 let qualified = [
-  "qualified primitive value", to_string Something.show_t, "<function>";
+  "qualified abstract value", to_string Something.show_t, "<function>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
+  "qualified parameterised abstract value",
+  Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 ";
 ]
 
 let string_form_of x = to_string x
