@@ -1,9 +1,6 @@
 
 open PolyPrint
 
-let test_case group name expected actual =
-  group, `Quick, fun () -> Alcotest.(check string) name expected actual
-
 type record = { a : int; b : string }
 
 let show_record { a; b } =
@@ -71,8 +68,8 @@ end
 let qualified = [
   "qualified abstract value", to_string Something.show_t, "<function>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
-  "qualified parameterised abstract value",
-  Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 ";
+  "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 ";
+  "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "a b ";
 ]
 
 let string_form_of x = to_string x
@@ -85,15 +82,18 @@ let type_variables = [
   "polymorphic to_string 4", to_string (wrap_and_stringify None), "Some <polymorphic>";
 ]
 
+let test_case name expected actual =
+  name, `Quick, fun () -> Alcotest.(check string) name expected actual
+
 let uncurry3 f (a, b, c) = f a b c
 
-let tests =
-  let open List in [
-  map (uncurry3 (test_case "simple")) simple;
-  map (uncurry3 (test_case "compound")) compound;
-  map (uncurry3 (test_case "qualified")) qualified;
-  map (uncurry3 (test_case "type variables")) type_variables;
-] |> concat
-
+let test_set name tests =
+  (name, List.map (uncurry3 test_case) tests)
+  
 let () =
-  Alcotest.run "ppx_polyprint" ["all", tests]
+  Alcotest.run "ppx_polyprint" [
+    test_set "simple" simple;
+    test_set "compound" compound;
+    test_set "qualified" qualified;
+    test_set "type variables" type_variables;
+  ]
