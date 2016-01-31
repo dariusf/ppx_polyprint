@@ -6,6 +6,25 @@ type record = { a : int; b : string }
 let show_record { a; b } =
   "{ a = " ^ string_of_int a ^ "; b = " ^ b ^ " }"
 
+class some_class =
+  object (self)
+    val field = 1
+    method meth x =
+      x + 1
+    method meth2 =
+      field
+    method to_string =
+      "this is some class"
+  end
+
+let show_some_class sc =
+  sc#to_string
+
+let singleton_obj = object
+  val v = 1
+  method meth = v
+end
+
 let simple = [
   "int", to_string 1, "1";
   "bool", to_string false, "false";
@@ -23,6 +42,12 @@ let simple = [
   "bool list", to_string [true; false], "[true; false]";
   "exn", to_string (Failure "what"), "Failure(\"what\")";
   "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }";
+  "ref", to_string (ref 1), "ref 1";
+  "object", to_string (new some_class), "this is some class";
+  "object", (to_string singleton_obj), "< meth : int >";
+  "int32", (to_string (Int32.of_int 45)), "45";
+  "int64", (to_string (Int64.of_int 74)), "74";
+  "nativeint", (to_string (Nativeint.of_int 65)), "65";
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b

@@ -9,6 +9,10 @@ let print x = x |> to_string |> print_endline
 module Printers = struct
 
   let string_of_int = string_of_int
+  let string_of_int32 = Int32.to_string
+  let string_of_int64 = Int64.to_string
+  let string_of_nativeint = Nativeint.to_string
+
   let string_of_bool = string_of_bool
   let string_of_float = string_of_float
 
@@ -25,6 +29,8 @@ module Printers = struct
     | Some s -> "Some " ^ pr s
     | None -> "None"
 
+  let string_of_ref pr x = "ref " ^ pr !x
+
   let string_of_list pr xs =
     let rec aux xs =
       match xs with
@@ -36,6 +42,8 @@ module Printers = struct
   let id x = x
 
   let string_of_function _ = "<function>"
+
+  let message (m : string) _ = m
 
   open Printf
 

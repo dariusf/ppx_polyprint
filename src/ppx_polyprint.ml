@@ -146,6 +146,9 @@ let constant_printer which args =
     match which with
     | "string" -> "id"
     | "int" -> "string_of_int"
+    | "int32" -> "string_of_int32"
+    | "int64" -> "string_of_int64"
+    | "nativeint" -> "string_of_nativeint"
     | "bool" -> "string_of_bool"
     | "char" -> "string_of_char"
     | "float" -> "string_of_float"
@@ -159,14 +162,15 @@ let rec build_printer : Types.type_expr -> expression list -> expression =
     let open Types in
     (* print_endline @@ print_type ty; *)
     match ty.desc with
-    | Tconstr (path_t, texprs, _) ->
+    | Tconstr (path_t, texprs, abbrev) ->
       begin
         let name =
           let open Path in
           match path_t with
           | Pident { Ident.name; _ } ->
             begin match name with
-              | ("int" | "string" | "bool" | "char" | "float" | "exn") as name ->
+              | ("int" | "string" | "bool" | "char" | "float" | "exn" |
+                 "int32" | "int64" | "nativeint") as name ->
                 constant_printer name args
               | "list" ->
                 tapp (tapp (qualified "string_of_list")
@@ -174,10 +178,15 @@ let rec build_printer : Types.type_expr -> expression list -> expression =
               | "option" ->
                 tapp (tapp (qualified "string_of_option")
                         (List.map (fun t -> build_printer t []) texprs)) args
+              | "ref" ->
+                tapp (tapp (qualified "string_of_ref")
+                        (List.map (fun t -> build_printer t []) texprs)) args
               | t ->
                 tapp (tapp (tident ("show_" ^ t))
                         (List.map (fun t -> build_printer t []) texprs)) args
             end
+          | Pdot (Pident { Ident.name = prefix; _ }, name, _) when prefix = "Pervasives"->
+            build_printer { ty with desc = Tconstr (pident name, texprs, abbrev) } args
           | Pdot (prefix, t, _) ->
             tapp (tapp (tident_with_path prefix ("show_" ^ t))
                     (List.map (fun t -> build_printer t []) texprs)) args
@@ -201,7 +210,8 @@ let rec build_printer : Types.type_expr -> expression list -> expression =
         | None ->
           tapp (tapp (qualified "string_of_tvar") [tstr ""]) args
       end
-    | Tobject _ -> failwith "not implemented obj"
+    | Tobject (t, _) ->
+      tapp (tapp (qualified "message") [tstr (print_type t)]) args
     | Tfield _ -> failwith "not implemented field"
     | Tnil -> failwith "not implemented nil"
     | Tsubst _ -> failwith "not implemented subst"
