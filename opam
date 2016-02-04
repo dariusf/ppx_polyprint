@@ -11,6 +11,7 @@ depends: [
   "ocamlfind"
   "alcotest" { >= "0.4.6" }
   "typpx" { >= "1.0.2" }
+  "ppx_tools" { >= "0.99.1" }
 ]
 install: [[make "install"]]
 remove: [[make "remove"]]

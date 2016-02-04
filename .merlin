@@ -1,4 +1,2 @@
 B _build/**
-PKG alcotest
-PKG compiler-libs.common
-PKG typpx
+PKG alcotest compiler-libs.common typpx ppx_tools.metaquot

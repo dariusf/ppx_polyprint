@@ -1,7 +1,6 @@
 
 PACKAGE = ppx_polyprint
 LIB = polyPrint
-
 TEST = test
 
 INSTALL = META \
@@ -15,18 +14,16 @@ OCB_FLAGS = -use-ocamlfind -I src -I test
 
 OCB = ocamlbuild $(OCB_FLAGS)
 
-all: build
+all: runtime ppx
 
-.PHONY: build ppx runtime test doc clean
+.PHONY: runtime ppx test doc clean
 
-build: ppx runtime
+runtime:
+	$(OCB) $(LIB).cma
+	$(OCB) $(LIB).cmxa
 
 ppx:
 	$(OCB) $(PACKAGE).native
-
-runtime:
-	$(OCB) $(LIB).cmxa
-	$(OCB) $(LIB).cma
 
 test: all
 	rm -rf _build/test/
@@ -42,6 +39,7 @@ doc:
 
 clean:
 	$(OCB) -clean
+	rm -rf _tests
 
 # opam
 
@@ -53,8 +51,8 @@ install: all
 remove:
 	ocamlfind remove $(PACKAGE)
 
-up:
-	opam pin add $(PACKAGE) . -n
+up: all
+	opam pin add $(PACKAGE) . -n -y
 	opam install $(PACKAGE) --verbose
 
 down:
