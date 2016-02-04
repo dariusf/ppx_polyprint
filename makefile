@@ -7,7 +7,9 @@ TEST = test
 INSTALL = META \
 	_build/src/$(LIB).cmi \
 	_build/src/$(PACKAGE).native \
-	_build/src/$(LIB).cma
+	_build/src/$(LIB).cma \
+	_build/src/$(LIB).cmxa \
+	_build/src/$(LIB).a
 
 OCB_FLAGS = -use-ocamlfind -I src -I test
 
@@ -23,6 +25,7 @@ ppx:
 	$(OCB) $(PACKAGE).native
 
 runtime:
+	$(OCB) $(LIB).cmxa
 	$(OCB) $(LIB).cma
 
 test: all

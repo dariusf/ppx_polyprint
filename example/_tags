@@ -1,1 +1,1 @@
-true: package(ppx_polyprint, ppx_deriving.show )
+true: package(ppx_polyprint, ppx_deriving.show)
