@@ -73,28 +73,28 @@ module Something : sig
   val thing : t
   val show_t : t -> string
 
-  type 'a s = Cons of 'a * 'a s | Nil
+  (* type 'a s = Cons of 'a * 'a s | Nil *)
   (* val thing_s : 'a s *)
-  val show_s : ('a -> string) -> 'a s -> string
+  (* val show_s : ('a -> string) -> 'a s -> string *)
 end =
 struct
   type t = int
   let thing = 1
   let show_t = string_of_int
 
-  type 'a s = Cons of 'a * 'a s | Nil
+  (* type 'a s = Cons of 'a * 'a s | Nil *)
   (* let thing_s : int s = Cons (1, Cons (2, Nil)) *)
-  let rec show_s pr s =
-    match s with
-    | Cons (a, rest) -> pr a ^ " " ^ show_s pr rest
-    | Nil -> ""
+  (* let rec show_s pr s = *)
+    (* match s with *)
+    (* | Cons (a, rest) -> pr a ^ " " ^ show_s pr rest *)
+    (* | Nil -> "" *)
 end
 
 let qualified = [
   "qualified abstract value", to_string Something.show_t, "<function>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
-  "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 ";
-  "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "a b ";
+  (* "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 "; *)
+  (* "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "a b "; *)
 ]
 
 let string_form_of x = to_string x
