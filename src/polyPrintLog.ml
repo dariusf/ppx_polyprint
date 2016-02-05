@@ -5,24 +5,7 @@ open Asttypes
 open Longident
 open Parsetree
 
-let dummy_loc =
-  {
-    Location.loc_start = Lexing.dummy_pos;
-    Location.loc_end = Lexing.dummy_pos;
-    Location.loc_ghost = true
-  }
-
-let app_mapper find replace =
-  { default_mapper with
-    expr = fun mapper expr ->
-      match expr with
-      | { pexp_desc =
-            Pexp_apply
-              ({ pexp_desc = Pexp_ident {txt = Lident fn_name; loc } }, args) }
-        when fn_name = find ->
-        Exp.apply (Exp.ident {txt=Lident replace; loc}) args
-      | _ -> default_mapper.expr mapper expr
-  }
+open PolyPrintUtil
 
 let string_of_list pr xs =
   let rec aux xs =
@@ -51,7 +34,6 @@ let pat_var name =
     ppat_attributes = [] }
 
 let rec collect_params f =
-  (* print_endline @@ Pprintast.string_of_expression f; *)
   match f with
   | { pexp_desc = Pexp_fun (_, _, {
       ppat_desc = Ppat_var { txt = param; _ }; _ }, rest ) } ->
@@ -229,6 +211,3 @@ let mapper =
         end
       | s -> default_mapper.structure_item mapper s
   }
-
-(* let () = register "log" getenv_mapper *)
-

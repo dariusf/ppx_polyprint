@@ -5,6 +5,8 @@ open Asttypes
 open Longident
 open Typedtree
 
+open PolyPrintUtil
+
 module Names = struct
   let runtime = "PolyPrint"
   let printers = "Printers"
@@ -20,13 +22,6 @@ let pdot t name = Path.Pdot (t, name, 0)
 (*   raise *)
 (*     (Location.Error *)
 (*        (Location.error ~loc "[%pretty] accepts a string, e.g. [%pretty \"USER\"]")) *)
-
-let dummy_loc =
-  {
-    Location.loc_start = Lexing.dummy_pos;
-    Location.loc_end = Lexing.dummy_pos;
-    Location.loc_ghost = true
-  }
 
 let dummy_value_desc =
   Types.{
