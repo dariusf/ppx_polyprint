@@ -4,6 +4,8 @@ let to_string : 'a -> string =
 
 let string_of = to_string
 
+let show = to_string
+
 let print x = x |> to_string |> print_endline
 
 module Printers = struct

@@ -205,7 +205,7 @@ let transform_str_letrec mapper bindings =
 let transform_str_let mapper bindings =
   transform_str transform_nonrecursive_binding mapper bindings
 
-let getenv_mapper =
+let mapper =
   { default_mapper with
     expr =
       begin
