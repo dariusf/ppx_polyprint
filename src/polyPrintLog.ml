@@ -142,7 +142,7 @@ let transform_nonrecursive_binding b =
 
 (** Transformations on expressions *)
 
-let transform_expr transform expr mapper bindings body =
+let transform_expr rec_flag transform expr mapper bindings body =
   let transform_interesting_binding b =
     let interesting = any contains_log expr.pexp_attributes && is_function_binding b in
     if interesting then
@@ -151,17 +151,17 @@ let transform_expr transform expr mapper bindings body =
       { b with pvb_expr = mapper.expr mapper b.pvb_expr }
   in
   let new_bindings = List.map transform_interesting_binding bindings in
-  { expr with pexp_desc = Pexp_let (Nonrecursive, new_bindings, mapper.expr mapper body) }
+  { expr with pexp_desc = Pexp_let (rec_flag, new_bindings, mapper.expr mapper body) }
 
 let transform_let expr mapper bindings body =
-  transform_expr transform_nonrecursive_binding expr mapper bindings body
+  transform_expr Nonrecursive transform_nonrecursive_binding expr mapper bindings body
 
 let transform_letrec expr mapper bindings body =
-  transform_expr transform_recursive_binding expr mapper bindings body
+  transform_expr Recursive transform_recursive_binding expr mapper bindings body
 
 (** Transformations on structure items *)
 
-let transform_str transform mapper bindings =
+let transform_str rec_flag transform mapper bindings =
   let transform_interesting_binding b =
     let interesting = any contains_log b.pvb_attributes && is_function_binding b in
     if interesting then
@@ -174,13 +174,13 @@ let transform_str transform mapper bindings =
     |> List.map transform_interesting_binding
     (* |> List.map (fun b -> { b with pvb_expr = mapper.expr mapper b.pvb_expr }) *)
   in
-  item @@ Pstr_value (Nonrecursive, new_bindings)
+  item @@ Pstr_value (rec_flag, new_bindings)
 
 let transform_str_letrec mapper bindings =
-  transform_str transform_recursive_binding mapper bindings
+  transform_str Recursive transform_recursive_binding mapper bindings
 
 let transform_str_let mapper bindings =
-  transform_str transform_nonrecursive_binding mapper bindings
+  transform_str Nonrecursive transform_nonrecursive_binding mapper bindings
 
 let mapper =
   { default_mapper with
