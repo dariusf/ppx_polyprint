@@ -12,10 +12,19 @@ let composed_pre_mapper =
         |> PolyPrintLog.mapper.expr PolyPrintLog.mapper
         |> PolyPrintShow.eta_expansion_mapper.expr PolyPrintShow.eta_expansion_mapper
     end;
-    structure_item = PolyPrintLog.mapper.structure_item
+    structure_item =
+      fun mapper expr ->
+        expr
+        |> PolyPrintLog.mapper.structure_item PolyPrintLog.mapper
+        |> PolyPrintShow.eta_expansion_mapper.structure_item PolyPrintShow.eta_expansion_mapper
   }
 
 module Map = TypedtreeMap.MakeMap(PolyPrintShow.MapArg)
+
+module TypedIdentityTransformation = struct
+  let map_structure x = x
+  let map_signature x = x
+end
 
 module Main = Typpx.Make.F(struct
     let tool_name = "ppx_polyprint"

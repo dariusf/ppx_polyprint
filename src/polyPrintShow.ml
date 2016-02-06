@@ -291,7 +291,8 @@ let ident s =
 let eta_expansion_mapper =
   let open Parsetree in
   { default_mapper with
-    expr = fun mapper expr ->
+    expr = begin
+      fun mapper expr ->
       match expr.pexp_desc with
       | Pexp_apply
           ({ pexp_desc =
@@ -300,14 +301,26 @@ let eta_expansion_mapper =
 
         { expr with
           pexp_desc = Pexp_apply
-              (f, List.map (fun (l, a) -> l, default_mapper.expr mapper a) args) }
+              (f, List.map (fun (l, a) -> l, mapper.expr mapper a) args) }
 
       | Pexp_ident ({ txt = Ldot (Lident mod_name, _) })
         when mod_name = Names.runtime ->
 
         (* TODO try to replace pat_var and these patterns with metaquot *)
+        let res =
         { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
 
+        in print_endline @@ Pprintast.string_of_expression res; res
       | _ -> default_mapper.expr mapper expr
+    end;
+    structure_item = fun mapper item ->
+      match item with
+      | { pstr_desc = Pstr_value (rec_flag, bindings) } ->
+        (* Recurse into nested subexpressions *)
+        let new_bindings = List.map
+            (fun vb -> { vb with pvb_expr = mapper.expr mapper vb.pvb_expr })
+            bindings in
+        { item with pstr_desc = Pstr_value (rec_flag, new_bindings) }
+      | s -> default_mapper.structure_item mapper s
   }
 
