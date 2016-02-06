@@ -23,3 +23,16 @@ let app_mapper find replace =
         Exp.apply (Exp.ident { txt=Lident replace; loc }) args
       | _ -> default_mapper.expr mapper expr
   }
+
+let pat_var name =
+  { ppat_desc = Ppat_var { txt = name; loc = dummy_loc };
+    ppat_loc = dummy_loc;
+    ppat_attributes = []
+  }
+
+let binding pat expr =
+  { pvb_pat = pat;
+    pvb_expr = expr;
+    pvb_loc = dummy_loc;
+    pvb_attributes = []
+  }

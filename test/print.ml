@@ -114,6 +114,8 @@ let higher_order = [
   "intended transformation", showp (fun x -> to_string x) 1, "1";
   "int", showp PolyPrint.to_string 1, "1";
   "string", showp PolyPrint.to_string "aaa", "aaa";
+  "aliases 1", showp PolyPrint.string_of "aaa", "aaa";
+  "aliases 2", showp PolyPrint.show "aaa", "aaa";
   "unqualified", showp to_string 1, "'a";
 ]
 

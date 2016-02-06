@@ -28,11 +28,6 @@ let rec contains_log attr =
 let attrs_of_bindings bs =
   List.concat @@ List.map (fun b -> b.pvb_attributes) bs
 
-let pat_var name =
-  { ppat_desc = Ppat_var { txt = name; loc = dummy_loc };
-    ppat_loc = dummy_loc;
-    ppat_attributes = [] }
-
 let rec collect_params f =
   match f with
   | { pexp_desc = Pexp_fun (_, _, {
