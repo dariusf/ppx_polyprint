@@ -5,6 +5,15 @@ open Asttypes
 open Longident
 open Parsetree
 
+module Names = struct
+  let runtime = "PolyPrint"
+  let printers = "Printers"
+  let default_log = "Default"
+  let to_string = ["to_string"; "string_of"; "show"]
+  let print = "print"
+  let print_n n = "print" ^ string_of_int n
+end
+
 let dummy_loc =
   {
     Location.loc_start = Lexing.dummy_pos;

@@ -10,13 +10,17 @@ let composed_pre_mapper =
       fun mapper expr ->
         expr
         |> PolyPrintLog.mapper.expr PolyPrintLog.mapper
+      (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
         |> PolyPrintShow.eta_expansion_mapper.expr PolyPrintShow.eta_expansion_mapper
+      (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
     end;
     structure_item =
       fun mapper expr ->
         expr
         |> PolyPrintLog.mapper.structure_item PolyPrintLog.mapper
+      (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
         |> PolyPrintShow.eta_expansion_mapper.structure_item PolyPrintShow.eta_expansion_mapper
+      (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
   }
 
 module Map = TypedtreeMap.MakeMap(PolyPrintShow.MapArg)

@@ -7,13 +7,6 @@ open Typedtree
 
 open PolyPrintUtil
 
-module Names = struct
-  let runtime = "PolyPrint"
-  let printers = "Printers"
-  let to_string = ["to_string"; "string_of"; "show"]
-  let print = "print"
-end
-
 let pident name = Path.Pident { Ident.name = name; stamp = 0; flags = 0 }
 
 let pdot t name = Path.Pdot (t, name, 0)
@@ -307,10 +300,8 @@ let eta_expansion_mapper =
         when mod_name = Names.runtime ->
 
         (* TODO try to replace pat_var and these patterns with metaquot *)
-        let res =
         { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
 
-        in print_endline @@ Pprintast.string_of_expression res; res
       | _ -> default_mapper.expr mapper expr
     end;
     structure_item = fun mapper item ->
