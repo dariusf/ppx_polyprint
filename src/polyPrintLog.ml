@@ -85,10 +85,10 @@ let is_function_binding b =
   | { pvb_expr = { pexp_desc = Pexp_fun _ } } -> true
   | _ -> false
 
-let get_fn_body pexp =
+let rec get_fn_body pexp =
   match pexp with
-  | { pexp_desc = Pexp_fun (_, _, _, b) } -> b
-  | _ -> failwith "not a function"
+  | { pexp_desc = Pexp_fun (_, _, _, b) } -> get_fn_body b
+  | _ -> pexp
 
 let all f xs =
   List.fold_left (fun t c -> t && f c) true xs
