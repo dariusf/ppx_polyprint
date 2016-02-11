@@ -69,6 +69,8 @@ module type LogSpec = sig
     'e param_spec ->
     'f param_spec ->
     'g param_spec -> unit
+
+  val run1 : string -> 'a param_spec -> 'b printer -> ('a -> 'b) -> 'b
 end
 
 module Default : LogSpec = struct
@@ -100,6 +102,19 @@ module Default : LogSpec = struct
     printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f))])
   let print7 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) =
     printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f)); (arg g_n (pr_g g))])
+
+  let run1 fn_name ((_, _, a) as aa) pr_res f =
+    print1 fn_name aa;
+    let res = f a in
+    print_result fn_name pr_res res;
+    res
+
+  let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res f =
+    print2 fn_name aa bb;
+    let res = f a b in
+    print_result fn_name pr_res res;
+    res
+
 end
 
 module Printers = struct

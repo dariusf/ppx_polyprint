@@ -11,7 +11,7 @@ module Names = struct
   let default_log = "Default"
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
-  let print_n n = "print" ^ string_of_int n
+  let run_n n = "run" ^ string_of_int n
 end
 
 let dummy_loc =

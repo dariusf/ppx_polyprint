@@ -95,7 +95,7 @@ let mangle fn_name =
 
 let params_out_of_range name count =
   failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
-  
+
 (** Transformations on bindings *)
 
 let transform_recursive_binding b =
@@ -116,11 +116,27 @@ let transform_recursive_binding b =
   if param_count < 1 || param_count > 7 then
     params_out_of_range fn_name param_count
   else
-    let printer = ident_dot [Names.runtime; Names.default_log; Names.print_n param_count] in
+    (* let printer = ident_dot ["Debug"; "no_" ^ string_of_int param_count] in *)
+    (* let printer = ident_dot ["Debug"; "no_" ^ string_of_int param_count] in *)
+    (* let printer = ident_dot [Names.runtime; Names.default_log; Names.run_n param_count] in *)
+    let printer = ident_dot ["Custom"; Names.run_n param_count] in
     let print_invocation = app printer
-        (str fn_name ::
-         List.map (fun p -> Exp.tuple [str p; [%expr PolyPrint.show]; ident p]) params)
+        (List.concat [
+            [str fn_name];
+            List.map (fun p -> Exp.tuple [str p; [%expr PolyPrint.show]; ident p]) params;
+            [[%expr PolyPrint.show]];
+            [app (ident mangled) [ident "aux"]]
+          ])
     in
+    (* let print_invocation = app printer *)
+    (* ([str fn_name] @ *)
+    (* (List.map (fun _ -> [%expr PolyPrint.show]) params) @ *)
+    (* [[%expr PolyPrint.show]] @ *)
+    (* [app (ident mangled) [ident "aux"]] @ *)
+    (* List.map ident params) *)
+
+    (* List.map (fun p -> Exp.tuple [str p; [%expr PolyPrint.show]; ident p]) params) *)
+    (* in *)
     let new_rhs = fun_of_params params [%expr
         let [%p pat_var mangled] = [%e nonrec_body] in
         let rec aux =
@@ -130,10 +146,11 @@ let transform_recursive_binding b =
                 (* PolyPrint.Default.print1 [%e str fn_name] ([%e str @@ List.hd params], PolyPrint.show, [%e ident @@ List.hd params]); *)
               
                 [%e print_invocation];
+                (* (); *)
 
-                let result = [%e app_variables mangled ("aux" :: params)] in
-                PolyPrint.Default.print_result [%e str fn_name] (PolyPrint.show) result;
-                result
+                (* let result = [%e app_variables mangled ("aux" :: params)] in *)
+                (* PolyPrint.Default.print_result [%e str fn_name] (PolyPrint.show) result; *)
+                (* result *)
               ]] in [%e app_variables "aux" params]
       ] in
     { b with pvb_expr = new_rhs }
