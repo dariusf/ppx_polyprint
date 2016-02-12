@@ -72,7 +72,7 @@ let run_invocation fn_name params param_count module_prefix fn =
       [fn]])
   in invocation
 
-let transform_recursive_binding attrs b =
+let transform_binding_recursively attrs b =
   let (original_rhs, fn_name, params) = extract_binding_info b in
   let module_prefix = check_config attrs in
   let param_count = count_params fn_name params in
@@ -93,7 +93,8 @@ let transform_recursive_binding attrs b =
     ] in
   { b with pvb_expr = new_rhs }
 
-let transform_nonrecursive_binding attrs b =
+(* rather than take attrs, these should take configs *)
+let transform_binding_nonrecursively attrs b =
   let (original_rhs, fn_name, params) = extract_binding_info b in
   let module_prefix = check_config attrs in
   let param_count = count_params fn_name params in
@@ -103,6 +104,14 @@ let transform_nonrecursive_binding attrs b =
             (ident (mangle fn_name))]]
   in
   { b with pvb_expr = new_rhs }
+
+let transform_recursive_binding attrs b =
+  if any (has_attr "logrec") attrs then
+    transform_binding_recursively attrs b
+  else
+    transform_binding_nonrecursively attrs b
+
+let transform_nonrecursive_binding = transform_binding_nonrecursively
 
 let interesting_expr_binding rec_flag attrs binding =
   let has_attr =
