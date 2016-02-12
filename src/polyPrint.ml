@@ -73,7 +73,48 @@ module type LogSpec = sig
     'f param_spec ->
     'g param_spec -> unit
 
-  val run1 : string -> 'a param_spec -> 'b printer -> ('a -> 'b) -> 'b
+  val run1 : string ->
+    'a param_spec ->
+    'b printer -> ('a -> 'b) -> 'b
+  val run2 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c printer -> ('a -> 'b -> 'c) -> 'c
+  val run3 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c param_spec ->
+    'd printer -> ('a -> 'b -> 'c -> 'd) -> 'd
+  val run4 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c param_spec ->
+    'd param_spec ->
+    'e printer -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e
+  val run5 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c param_spec ->
+    'd param_spec ->
+    'e param_spec ->
+    'f printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'f
+  val run6 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c param_spec ->
+    'd param_spec ->
+    'e param_spec ->
+    'f param_spec ->
+    'g printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'g
+  val run7 : string ->
+    'a param_spec ->
+    'b param_spec ->
+    'c param_spec ->
+    'd param_spec ->
+    'e param_spec ->
+    'f param_spec ->
+    'g param_spec ->
+    'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
 end
 
 module Default : LogSpec = struct
@@ -106,18 +147,52 @@ module Default : LogSpec = struct
   let print_args7 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) =
     printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f)); (arg g_n (pr_g g))])
 
-  let run1 fn_name ((_, _, a) as aa) pr_res f =
+  let run1 fn_name ((_, _, a) as aa) pr_res fn =
     print_args1 fn_name aa;
-    let res = f a in
+    let res = fn a in
     print_result fn_name pr_res res;
     res
 
-  let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res f =
+  let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res fn =
     print_args2 fn_name aa bb;
-    let res = f a b in
+    let res = fn a b in
     print_result fn_name pr_res res;
     res
 
+  let run3 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) pr_res fn =
+    print_args3 fn_name aa bb cc;
+    let res = fn a b c in
+    print_result fn_name pr_res res;
+    res
+
+  let run4 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
+      ((_, _, d) as dd) pr_res fn =
+    print_args4 fn_name aa bb cc dd;
+    let res = fn a b c d in
+    print_result fn_name pr_res res;
+    res
+
+  let run5 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
+      ((_, _, d) as dd) ((_, _, e) as ee) pr_res fn =
+    print_args5 fn_name aa bb cc dd ee;
+    let res = fn a b c d e in
+    print_result fn_name pr_res res;
+    res
+
+  let run6 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
+      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff) pr_res fn =
+    print_args6 fn_name aa bb cc dd ee ff;
+    let res = fn a b c d e f in
+    print_result fn_name pr_res res;
+    res
+
+  let run7 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
+      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff)
+      ((_, _, g) as gg) pr_res fn =
+    print_args7 fn_name aa bb cc dd ee ff gg;
+    let res = fn a b c d e f g in
+    print_result fn_name pr_res res;
+    res
 end
 
 module Printers = struct
