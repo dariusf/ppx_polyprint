@@ -14,12 +14,14 @@ let mangle fn_name =
 let params_out_of_range name count =
   failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
 
+let logrec_used_on_nonrecursive_binding () =
+  failwith @@ Printf.sprintf "[@logrec] cannot be used on a non-recursive binding"
+
 type log_config = string
 
-let rec contains_log attr =
-  let open Parsetree in
+let has_attr name attr =
   match attr with
-  | { txt = name }, _ when name = "log" -> true
+  | { txt = n }, _ when n = name -> true
   | _ -> false
 
 let rec get_log_config attr =
@@ -41,8 +43,6 @@ let rec get_log_config attr =
   (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
   (*            }] when name = "log" -> failwith "not yet implemented" *)
   | _ -> None
-
-(** Transformations on bindings *)
 
 let transform_recursive_binding b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
@@ -120,47 +120,41 @@ let transform_nonrecursive_binding b =
       result] in
   { b with pvb_expr = new_rhs }
 
-(** Transformations on expressions *)
+let interesting_expr_binding rec_flag attrs binding =
+  let has_attr =
+    match rec_flag with
+    | Nonrecursive ->
+      if any (has_attr "logrec") attrs then
+        logrec_used_on_nonrecursive_binding ()
+      else
+        any (has_attr "log") attrs
+    | Recursive ->
+      any (has_attr "log") attrs || any (has_attr "logrec") attrs
+  in has_attr && is_function_binding binding
 
+let interesting_str_binding rec_flag binding =
+  let attrs = binding.pvb_attributes in
+  interesting_expr_binding rec_flag attrs binding
+  
 let transform_expr rec_flag transform expr mapper bindings body =
-  let transform_interesting_binding b =
-    let interesting = any contains_log expr.pexp_attributes && is_function_binding b in
-    if interesting then
+  let change b =
+    if interesting_expr_binding rec_flag expr.pexp_attributes b then
       transform b
     else
       { b with pvb_expr = mapper.expr mapper b.pvb_expr }
   in
-  let new_bindings = List.map transform_interesting_binding bindings in
+  let new_bindings = List.map change bindings in
   { expr with pexp_desc = Pexp_let (rec_flag, new_bindings, mapper.expr mapper body) }
 
-let transform_let expr mapper bindings body =
-  transform_expr Nonrecursive transform_nonrecursive_binding expr mapper bindings body
-
-let transform_letrec expr mapper bindings body =
-  transform_expr Recursive transform_recursive_binding expr mapper bindings body
-
-(** Transformations on structure items *)
-
 let transform_str rec_flag transform mapper bindings =
-  let transform_interesting_binding b =
-    let interesting = any contains_log b.pvb_attributes && is_function_binding b in
-    if interesting then
+  let change b =
+    if interesting_str_binding rec_flag b then
       transform b
     else
       { b with pvb_expr = mapper.expr mapper b.pvb_expr }
   in
-  let new_bindings =
-    bindings
-    |> List.map transform_interesting_binding
-    (* |> List.map (fun b -> { b with pvb_expr = mapper.expr mapper b.pvb_expr }) *)
-  in
+  let new_bindings = List.map change bindings in
   item @@ Pstr_value (rec_flag, new_bindings)
-
-let transform_str_letrec mapper bindings =
-  transform_str Recursive transform_recursive_binding mapper bindings
-
-let transform_str_let mapper bindings =
-  transform_str Nonrecursive transform_nonrecursive_binding mapper bindings
 
 let mapper =
   { default_mapper with
@@ -171,8 +165,12 @@ let mapper =
           | { pexp_desc = Pexp_let (rec_flag, bindings, body) } ->
             begin
               match rec_flag with
-              | Recursive -> transform_letrec expr mapper bindings body
-              | Nonrecursive -> transform_let expr mapper bindings body
+              | Recursive ->
+                transform_expr Recursive
+                  transform_recursive_binding expr mapper bindings body
+              | Nonrecursive ->
+                transform_expr Nonrecursive
+                  transform_nonrecursive_binding expr mapper bindings body
             end
           | x -> default_mapper.expr mapper x;
       end;
@@ -181,8 +179,12 @@ let mapper =
       | { pstr_desc = Pstr_value (rec_flag, bindings) } ->
         begin
           match rec_flag with
-          | Recursive -> transform_str_letrec mapper bindings
-          | Nonrecursive -> transform_str_let mapper bindings
+          | Recursive ->
+            transform_str Recursive
+              transform_recursive_binding mapper bindings
+          | Nonrecursive ->
+            transform_str Nonrecursive
+              transform_nonrecursive_binding mapper bindings
         end
       | s -> default_mapper.structure_item mapper s
   }

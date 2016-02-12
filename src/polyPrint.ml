@@ -9,6 +9,9 @@ let show = to_string
 let print x = x |> to_string |> print_endline
 
 type param_name = string
+type fn_name = string
+type value = string
+
 type 'a printer = 'a -> string
 type 'a param_spec = param_name * 'a printer * 'a
 
@@ -17,9 +20,9 @@ module type LogSpec = sig
   (** High-level API, for configuring how logging appears. *)
 
   val sep : unit -> string
-  val fn : string -> string
-  val arg : string -> string -> string
-  val result : string -> string -> string
+  val fn : fn_name -> string
+  val arg : param_name -> value -> string
+  val result : fn_name -> value -> string
 
   (** Low-level API, for tweaks that fundamentally change how logging
       is carried out. All the different arities need to be implemented
@@ -31,37 +34,37 @@ module type LogSpec = sig
 
   val print_result : string -> 'a printer -> 'a -> unit
 
-  val print1 : string ->
+  val print_args1 : string ->
     'a param_spec -> unit
-  val print2 : string ->
+  val print_args2 : string ->
     'a param_spec ->
     'b param_spec -> unit
-  val print2 : string ->
+  val print_args2 : string ->
     'a param_spec ->
     'b param_spec -> unit
-  val print3 : string ->
+  val print_args3 : string ->
     'a param_spec ->
     'b param_spec ->
     'c param_spec -> unit
-  val print4 : string ->
+  val print_args4 : string ->
     'a param_spec ->
     'b param_spec ->
     'c param_spec ->
     'd param_spec -> unit
-  val print5 : string ->
+  val print_args5 : string ->
     'a param_spec ->
     'b param_spec ->
     'c param_spec ->
     'd param_spec ->
     'e param_spec -> unit
-  val print6 : string ->
+  val print_args6 : string ->
     'a param_spec ->
     'b param_spec ->
     'c param_spec ->
     'd param_spec ->
     'e param_spec ->
     'f param_spec -> unit
-  val print7 : string ->
+  val print_args7 : string ->
     'a param_spec ->
     'b param_spec ->
     'c param_spec ->
@@ -81,36 +84,36 @@ module Default : LogSpec = struct
   (* TODO make this use debug.ml *)
 
   let sep () = " | "
-  let fn name = name ^ " <- "
+  let fn name = name ^ " <-"
   let arg name value = sprintf "%s = %s" name value
   let result fn_name value = sprintf "%s -> %s" fn_name value
 
   let print_result fn_name pr_res res =
     print_endline (result fn_name (pr_res res))
-  
-  let print1 fn_name (a_n, pr_a, a) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a))])
-  let print2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b))])
-  let print3 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c))])
-  let print4 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d))])
-  let print5 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e))])
-  let print6 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f))])
-  let print7 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) =
-    printf "%s%s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f)); (arg g_n (pr_g g))])
+
+  let print_args1 fn_name (a_n, pr_a, a) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a))])
+  let print_args2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b))])
+  let print_args3 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c))])
+  let print_args4 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d))])
+  let print_args5 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e))])
+  let print_args6 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f))])
+  let print_args7 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) =
+    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f)); (arg g_n (pr_g g))])
 
   let run1 fn_name ((_, _, a) as aa) pr_res f =
-    print1 fn_name aa;
+    print_args1 fn_name aa;
     let res = f a in
     print_result fn_name pr_res res;
     res
 
   let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res f =
-    print2 fn_name aa bb;
+    print_args2 fn_name aa bb;
     let res = f a b in
     print_result fn_name pr_res res;
     res
