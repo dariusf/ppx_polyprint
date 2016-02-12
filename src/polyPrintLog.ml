@@ -98,8 +98,17 @@ let transform_binding_nonrecursively attrs b =
   let (original_rhs, fn_name, params) = extract_binding_info b in
   let module_prefix = check_config attrs in
   let param_count = count_params fn_name params in
+  let new_rhs =
+    let body = get_fn_body original_rhs in
+    let mapper = app_mapper fn_name (mangle fn_name) in
+    let new_body = mapper.expr mapper body in
+    fun_of_params params new_body
+  in
+  (* let rec is used here when transforming recursive functions.
+     Non-recursive functions wouldn't have recursive references,
+     so this is safe. *)
   let new_rhs = fun_of_params params [%expr
-      let [%p pat_var (mangle fn_name)] = [%e original_rhs] in
+      let rec [%p pat_var (mangle fn_name)] = [%e new_rhs] in
       [%e run_invocation fn_name params param_count module_prefix
             (ident (mangle fn_name))]]
   in
