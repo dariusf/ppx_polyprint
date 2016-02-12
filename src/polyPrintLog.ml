@@ -19,12 +19,6 @@ let print_attr_names_in_bindings bs =
   let names = List.concat @@ List.map (fun b -> b.pvb_attributes) bs in
   print_endline @@ string_of_list (fun x -> x) @@ List.map (fun ({txt=name}, _) -> name) names
 
-let rec contains_log attr =
-  let open Parsetree in
-  match attr with
-  | { txt = name }, _ when name = "log" -> true
-  | _ -> false
-
 let attrs_of_bindings bs =
   List.concat @@ List.map (fun b -> b.pvb_attributes) bs
 
@@ -96,6 +90,34 @@ let mangle fn_name =
 let params_out_of_range name count =
   failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
 
+type log_config = string
+
+let rec contains_log attr =
+  let open Parsetree in
+  match attr with
+  | { txt = name }, _ when name = "log" -> true
+  | _ -> false
+
+let rec get_log_config attr =
+  let open Parsetree in
+  if List.length attr = 0 then None
+  else match List.hd attr with
+  | _,
+    PStr [{pstr_desc =
+                Pstr_eval (
+                  {pexp_desc = Pexp_construct ({txt = Lident name}, None)}
+                , _)
+             }] ->
+    Some name
+  (* | _, PStr [{pstr_desc = *)
+  (*               Pstr_eval ( *)
+  (*                 {pexp_desc = *)
+  (*                    Pexp_sequence *)
+  (*                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)}, *)
+  (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
+  (*            }] when name = "log" -> failwith "not yet implemented" *)
+  | _ -> None
+
 (** Transformations on bindings *)
 
 let transform_recursive_binding b =
@@ -104,6 +126,12 @@ let transform_recursive_binding b =
   let params = collect_params original_rhs in
   let mangled = mangle fn_name in
 
+  let config = get_log_config b.pvb_attributes in
+  let config_module =
+    match config with
+    | None -> [Names.runtime; Names.default_log]
+    | Some c -> [c]
+  in
   let nonrec_params = "self" :: params in
   let nonrec_body =
     let body = get_fn_body original_rhs in
@@ -119,7 +147,7 @@ let transform_recursive_binding b =
     (* let printer = ident_dot ["Debug"; "no_" ^ string_of_int param_count] in *)
     (* let printer = ident_dot ["Debug"; "no_" ^ string_of_int param_count] in *)
     (* let printer = ident_dot [Names.runtime; Names.default_log; Names.run_n param_count] in *)
-    let printer = ident_dot ["Custom"; Names.run_n param_count] in
+    let printer = ident_dot (config_module @ [Names.run_n param_count]) in
     let print_invocation = app printer
         (List.concat [
             [str fn_name];
