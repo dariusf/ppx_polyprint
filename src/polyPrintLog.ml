@@ -25,32 +25,30 @@ let has_attr name attr =
   | _ -> false
 
 let rec get_log_config attr =
-  let open Parsetree in
-  if List.length attr = 0 then None
-  else match List.hd attr with
-  | _,
-    PStr [{pstr_desc =
-                Pstr_eval (
-                  {pexp_desc = Pexp_construct ({txt = Lident name}, None)}
-                , _)
-             }] ->
-    Some name
-  (* | _, PStr [{pstr_desc = *)
-  (*               Pstr_eval ( *)
-  (*                 {pexp_desc = *)
-  (*                    Pexp_sequence *)
-  (*                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)}, *)
-  (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
-  (*            }] when name = "log" -> failwith "not yet implemented" *)
-  | _ -> None
+  match attr with
+  | [] -> None
+  | _ ->
+    begin match List.hd attr with
+      | _, PStr [{pstr_desc = Pstr_eval
+                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)} , _)}] ->
+        Some name
+      (* | _, PStr [{pstr_desc = *)
+      (*               Pstr_eval ( *)
+      (*                 {pexp_desc = *)
+      (*                    Pexp_sequence *)
+      (*                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)}, *)
+      (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
+      (*            }] when name = "log" -> failwith "not yet implemented" *)
+      | _ -> None
+    end
 
-let transform_recursive_binding b =
+let transform_recursive_binding attrs b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
   let fn_name = get_fn_name original_lhs in
   let params = collect_params original_rhs in
   let mangled = mangle fn_name in
 
-  let config = get_log_config b.pvb_attributes in
+  let config = get_log_config attrs in
   let config_module =
     match config with
     | None -> [Names.runtime; Names.default_log]
@@ -107,7 +105,7 @@ let transform_recursive_binding b =
       ] in
     { b with pvb_expr = new_rhs }
 
-let transform_nonrecursive_binding b =
+let transform_nonrecursive_binding attrs b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
   let fn_name = get_fn_name original_lhs in
   let params = collect_params original_rhs in
@@ -139,7 +137,7 @@ let interesting_str_binding rec_flag binding =
 let transform_expr rec_flag transform expr mapper bindings body =
   let change b =
     if interesting_expr_binding rec_flag expr.pexp_attributes b then
-      transform b
+      transform expr.pexp_attributes b
     else
       { b with pvb_expr = mapper.expr mapper b.pvb_expr }
   in
@@ -149,7 +147,7 @@ let transform_expr rec_flag transform expr mapper bindings body =
 let transform_str rec_flag transform mapper bindings =
   let change b =
     if interesting_str_binding rec_flag b then
-      transform b
+      transform b.pvb_attributes b
     else
       { b with pvb_expr = mapper.expr mapper b.pvb_expr }
   in
