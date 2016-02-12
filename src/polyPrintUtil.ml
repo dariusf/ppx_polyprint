@@ -8,7 +8,7 @@ open Parsetree
 module Names = struct
   let runtime = "PolyPrint"
   let printers = "Printers"
-  let default_log = "Default"
+  let default_module = "Default"
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
   let run_n n = "run" ^ string_of_int n
