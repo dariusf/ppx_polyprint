@@ -40,3 +40,5 @@ module Main = Typpx.Make.F(struct
   end)
 
 let () = Main.run ()
+
+(* let () = register "ppx_polyprint" (fun _argv -> default_mapper) *)

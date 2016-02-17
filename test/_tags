@@ -1,1 +1,3 @@
+true: debug, package(alcotest typpx ppx_deriving.show)
 <ppx.ml>: ppx_native
+<noppx.ml>: package(ppx_tools.metaquot compiler-libs.common)

@@ -208,44 +208,84 @@ module Printers = struct
   let string_of_char = String.make 1
   let string_of_exn = Printexc.to_string
 
-  let string_of_tvar name _ =
+  open Format
+
+  let pp_tvar name fmt _ =
     match name with
-    | "" -> "<polymorphic>"
-    | v -> "'" ^ v
+    | "" -> fprintf fmt "<polymorphic>"
+    | v -> fprintf fmt "'%s" v
 
-  let string_of_option pr x =
+  let pp_option pp fmt x =
     match x with
-    | Some s -> "Some " ^ pr s
-    | None -> "None"
+    | Some s -> fprintf fmt "Some %a" pp s
+    | None -> fprintf fmt "None"
 
-  let string_of_ref pr x = "ref " ^ pr !x
+  let pp_ref pp fmt x =
+    fprintf fmt "ref %a" pp !x
 
-  let string_of_list pr xs =
+  let rec pp_list pp fmt xs =
     let rec aux xs =
       match xs with
-      | [] -> ""
-      | [x] -> pr x
-      | y :: ys -> pr y ^ "; " ^ aux ys
-    in "[" ^ aux xs ^ "]"
+      | [] -> fprintf fmt ""
+      | [x] -> fprintf fmt "%a" pp x
+      | y :: ys -> fprintf fmt "%a; " pp y; aux ys
+    in
+    fprintf fmt "[";
+    aux xs;
+    fprintf fmt "]"
 
-  let id x = x
+  let pp_function fmt _ = fprintf fmt "<function>"
 
-  let string_of_function _ = "<function>"
+  let pp_misc s fmt _ = fprintf fmt "%s" s
 
-  let message (m : string) _ = m
+  let pp_tuple pr_a pr_b fmt (a, b) =
+    fprintf fmt "(%a, %a)" pr_a a pr_b b
+  let pp_tuple3 pr_a pr_b pr_c fmt (a, b, c) =
+    fprintf fmt "(%a, %a, %a)" pr_a a pr_b b pr_c c
+  let pp_tuple4 pr_a pr_b pr_c pr_d fmt (a, b, c, d) =
+    fprintf fmt "(%a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d
+  let pp_tuple5 pr_a pr_b pr_c pr_d pr_e fmt (a, b, c, d, e) =
+    fprintf fmt "(%a, %a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d pr_e e
+  let pp_tuple6 pr_a pr_b pr_c pr_d pr_e pr_f fmt (a, b, c, d, e, f) =
+    fprintf fmt "(%a, %a, %a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d pr_e e pr_f f
+  let pp_tuple7 pr_a pr_b pr_c pr_d pr_e pr_f pr_g fmt (a, b, c, d, e, f, g) =
+    fprintf fmt "(%a, %a, %a, %a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d pr_e e pr_f f pr_g g
 
-  open Printf
+  (* let string_of_tvar name _ = *)
+  (*   match name with *)
+  (*   | "" -> "<polymorphic>" *)
+  (*   | v -> "'" ^ v *)
 
-  let string_of_tuple pr_a pr_b (a, b) =
-    sprintf "(%s, %s)" (pr_a a) (pr_b b)
-  let string_of_tuple3 pr_a pr_b pr_c (a, b, c) =
-    sprintf "(%s, %s, %s)" (pr_a a) (pr_b b) (pr_c c)
-  let string_of_tuple4 pr_a pr_b pr_c pr_d (a, b, c, d) =
-    sprintf "(%s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d)
-  let string_of_tuple5 pr_a pr_b pr_c pr_d pr_e (a, b, c, d, e) =
-    sprintf "(%s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e)
-  let string_of_tuple6 pr_a pr_b pr_c pr_d pr_e pr_f (a, b, c, d, e, f) =
-    sprintf "(%s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f)
-  let string_of_tuple7 pr_a pr_b pr_c pr_d pr_e pr_f pr_g (a, b, c, d, e, f, g) =
-    sprintf "(%s, %s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) (pr_g g)
+  (* let string_of_option pr x = *)
+  (*   match x with *)
+  (*   | Some s -> "Some " ^ pr s *)
+  (*   | None -> "None" *)
+
+  (* let string_of_ref pr x = "ref " ^ pr !x *)
+
+  (* let string_of_list pr xs = *)
+  (*   let rec aux xs = *)
+  (*     match xs with *)
+  (*     | [] -> "" *)
+  (*     | [x] -> pr x *)
+  (*     | y :: ys -> pr y ^ "; " ^ aux ys *)
+  (*   in "[" ^ aux xs ^ "]" *)
+
+  (* let string_of_function _ = "<function>" *)
+
+  (* open Printf *)
+
+  (* let string_of_tuple pr_a pr_b (a, b) = *)
+  (*   sprintf "(%s, %s)" (pr_a a) (pr_b b) *)
+  (* let string_of_tuple3 pr_a pr_b pr_c (a, b, c) = *)
+  (*   sprintf "(%s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) *)
+  (* let string_of_tuple4 pr_a pr_b pr_c pr_d (a, b, c, d) = *)
+  (*   sprintf "(%s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) *)
+  (* let string_of_tuple5 pr_a pr_b pr_c pr_d pr_e (a, b, c, d, e) = *)
+  (*   sprintf "(%s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) *)
+  (* let string_of_tuple6 pr_a pr_b pr_c pr_d pr_e pr_f (a, b, c, d, e, f) = *)
+  (*   sprintf "(%s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) *)
+  (* let string_of_tuple7 pr_a pr_b pr_c pr_d pr_e pr_f pr_g (a, b, c, d, e, f, g) = *)
+  (*   sprintf "(%s, %s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) (pr_g g) *)
+
 end

@@ -8,23 +8,22 @@ open Typedtree
 open PolyPrintUtil
 open PolyPrintUtil.Typed
 
-let constant_printer which args =
-  let name =
+let constant_pp which args =
     match which with
-    | "string" -> "id"
-    | "int" -> "string_of_int"
-    | "int32" -> "string_of_int32"
-    | "int64" -> "string_of_int64"
-    | "nativeint" -> "string_of_nativeint"
-    | "bool" -> "string_of_bool"
-    | "char" -> "string_of_char"
-    | "float" -> "string_of_float"
-    | "exn" -> "string_of_exn"
+    | "string" -> tapp (tident_ ["Format"; "pp_print_string"]) args
+    | "int" -> tapp (tident_ ["Format"; "pp_print_int"]) args
+    | "bool" -> tapp (tident_ ["Format"; "pp_print_bool"]) args
+    | "char" -> tapp (tident_ ["Format"; "pp_print_char"]) args
+    | "float" -> tapp (tident_ ["Format"; "pp_print_float"]) args
+    (* | "int32" -> "string_of_int32" *)
+    (* | "int64" -> "string_of_int64" *)
+    (* | "nativeint" -> "string_of_nativeint" *)
+    (* | "exn" -> "string_of_exn" *)
     | _ -> failwith @@ "printer for constant type " ^ which ^ " not implemented"
-  in
-  tapp (qualified name) args
+  (* in *)
+  (* tapp (qualified name) args *)
 
-let rec build_printer : Types.type_expr -> expression list -> expression =
+let rec build_pp : Types.type_expr -> expression list -> expression =
   fun ty args ->
     let open Types in
     (* print_endline @@ print_type ty; *)
@@ -36,49 +35,49 @@ let rec build_printer : Types.type_expr -> expression list -> expression =
           match path_t with
           | Pident { Ident.name; _ } ->
             begin match name with
-              | ("int" | "string" | "bool" | "char" | "float" | "exn" |
-                 "int32" | "int64" | "nativeint") as name ->
-                constant_printer name args
+              | ("int" | "string" | "bool" | "char" | "float") as name ->
+              (* | "exn" | "int32" | "int64" | "nativeint") *)
+                constant_pp name args
               | "list" ->
-                tapp (tapp (qualified "string_of_list")
-                        (List.map (fun t -> build_printer t []) texprs)) args
+                tapp (tapp (qualified "pp_list")
+                        (List.map (fun t -> build_pp t []) texprs)) args
               | "option" ->
-                tapp (tapp (qualified "string_of_option")
-                        (List.map (fun t -> build_printer t []) texprs)) args
+                tapp (tapp (qualified "pp_option")
+                        (List.map (fun t -> build_pp t []) texprs)) args
               | "ref" ->
-                tapp (tapp (qualified "string_of_ref")
-                        (List.map (fun t -> build_printer t []) texprs)) args
+                tapp (tapp (qualified "pp_ref")
+                        (List.map (fun t -> build_pp t []) texprs)) args
               | t ->
-                tapp (tapp (tident ("show_" ^ t))
-                        (List.map (fun t -> build_printer t []) texprs)) args
+                tapp (tapp (tident ("pp_" ^ t))
+                        (List.map (fun t -> build_pp t []) texprs)) args
             end
           | Pdot (Pident { Ident.name = prefix; _ }, name, _) when prefix = "Pervasives"->
-            build_printer { ty with desc = Tconstr (pident name, texprs, abbrev) } args
+            build_pp { ty with desc = Tconstr (pident name, texprs, abbrev) } args
           | Pdot (prefix, t, _) ->
-            tapp (tapp (tident_with_path prefix ("show_" ^ t))
-                    (List.map (fun t -> build_printer t []) texprs)) args
+            tapp (tapp (tident_with_path prefix ("pp_" ^ t))
+                    (List.map (fun t -> build_pp t []) texprs)) args
           | _ -> failwith "Papply not yet implemented"
         in name
       end
-
-    | Tarrow _ -> tapp (qualified "string_of_function") args
+    | Tarrow _ ->
+      tapp (qualified "pp_function") args
     | Ttuple tys ->
       let length = List.length tys in
       assert (length >= 2 && length <= 7);
       let suffix = if length = 2 then "" else string_of_int length in
-      let name = "string_of_tuple" ^ suffix in
-      tapp (tapp (qualified name) (List.map (fun t -> build_printer t []) tys)) args
-    | Tlink t -> build_printer t args
+      let name = "pp_tuple" ^ suffix in
+      tapp (tapp (qualified name) (List.map (fun t -> build_pp t []) tys)) args
+    | Tlink t -> build_pp t args
     | Tvar v -> (* what is v? monomorphic type from value restriction? *)
       begin
         match v with
         | Some v ->
-          tapp (tapp (qualified "string_of_tvar") [tstr v]) args
+          tapp (tapp (qualified "pp_tvar") [tstr v]) args
         | None ->
-          tapp (tapp (qualified "string_of_tvar") [tstr ""]) args
+          tapp (tapp (qualified "pp_tvar") [tstr ""]) args
       end
     | Tobject (t, _) ->
-      tapp (tapp (qualified "message") [tstr (print_type t)]) args
+      tapp (tapp (qualified "pp_misc") [tstr (print_type t)]) args
     | Tfield _ -> failwith "not implemented field"
     | Tnil -> failwith "not implemented nil"
     | Tsubst _ -> failwith "not implemented subst"
@@ -95,9 +94,11 @@ let transform_printer e args =
       begin match e.exp_desc with
         | Texp_ident (_, _, { val_type = ty }) ->
 
+      let printer =
+      tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty []] in
           begin match ty.desc with
             | Tarrow (_, a, b, _) ->
-              { e with exp_desc = (build_printer a []).exp_desc }
+              { e with exp_desc = printer.exp_desc }
             | _ -> assert false
           end
 
@@ -106,8 +107,11 @@ let transform_printer e args =
 
     | ["", Some ({ exp_type = ty } as _a), Required] ->
       (* printers are called with a single argument *)
-      { e with exp_desc =
-                 (build_printer ty (args_to_exprs args)).exp_desc }
+      let printer =
+      tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
+                                            build_pp ty []] @ (args_to_exprs args)) in
+      (* print_endline @@ Pprintast.string_of_expression @@ Typpx.Untypeast.untype_expression printer; *)
+      { e with exp_desc = printer.exp_desc }
     | _ ->
       (* better error handling required *)
       failwith (Printf.sprintf "no function in the API has %d arguments" (List.length args))

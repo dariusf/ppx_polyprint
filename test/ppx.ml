@@ -3,7 +3,9 @@ open Test_util
 open PolyPrint
 
 type record = { a : int; b : string }
+(* [@@deriving show] *)
 
+(* this can be removed when the typpx-deriving bug is fixed *)
 let show_record { a; b } =
   "{ a = " ^ string_of_int a ^ "; b = " ^ b ^ " }"
 
@@ -18,8 +20,9 @@ class some_class =
       "this is some class"
   end
 
-let show_some_class sc =
-  sc#to_string
+(* this needs to be defined *)
+let pp_some_class fmt sc =
+  Format.fprintf fmt "%s" sc#to_string
 
 let singleton_obj = object
   val v = 1
@@ -41,22 +44,18 @@ let simple = [
   "tuple7", to_string (1, 2, 3, 4, 5, 6, 7), "(1, 2, 3, 4, 5, 6, 7)";
   "int list", to_string [1; 2], "[1; 2]";
   "bool list", to_string [true; false], "[true; false]";
-  "exn", to_string (Failure "what"), "Failure(\"what\")";
-  "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }";
   "ref", to_string (ref 1), "ref 1";
   "object", to_string (new some_class), "this is some class";
   "object", (to_string singleton_obj), "< meth : int >";
-  "int32", (to_string (Int32.of_int 45)), "45";
-  "int64", (to_string (Int64.of_int 74)), "74";
-  "nativeint", (to_string (Nativeint.of_int 65)), "65";
+  (* "exn", to_string (Failure "what"), "Failure(\"what\")"; *)
+  (* "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }"; *)
+  (* "int32", (to_string (Int32.of_int 45)), "45"; *)
+  (* "int64", (to_string (Int64.of_int 74)), "74"; *)
+  (* "nativeint", (to_string (Nativeint.of_int 65)), "65"; *)
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b
-
-let show_either pr_a pr_b e =
-  match e with
-  | Left a -> "Left " ^ pr_a a
-  | Right b -> "Right " ^ pr_b b
+  [@@deriving show]
 
 let compound = [
   "int tuple list", to_string [(1, 2)], "[(1, 2)]";
@@ -65,35 +64,55 @@ let compound = [
   "option none", to_string None, "None";
   "option int", to_string (Some 1), "Some 1";
   "option string", to_string (Some "two"), "Some two";
-  "user-defined either 1 (defaults to show_either)", to_string (Left 1), "Left 1";
-  "user-defined either 2", to_string (Right "hello"), "Right hello";
+  "user-defined either 1 (defaults to show_either)", to_string (Left 1), "(Ppx.Left 1)";
+  "user-defined either 2", to_string (Right "hello"), "(Ppx.Right hello)";
 ]
 
 module Something : sig
   type t
   val thing : t
-  val show_t : t -> string
+  val pp_t : Format.formatter -> t -> unit
+
+  val id : t -> t
 
   type 'a s = Cons of 'a * 'a s | Nil
-  val show_s : ('a -> string) -> 'a s -> string
+
+  val pp_s : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a s -> unit
 end =
 struct
   type t = int
+
+  (* if we derive show, we can't constrain the module via its signature
+     as the printers will be absent. *)
+  (* [@@deriving show] *)
+
+  let pp_t = Format.pp_print_int
+
   let thing = 1
-  let show_t = string_of_int
 
   type 'a s = Cons of 'a * 'a s | Nil
-  let rec show_s pr s =
-  match s with
-  | Cons (a, rest) -> pr a ^ " " ^ show_s pr rest
-  | Nil -> ""
+    [@@deriving show]
+
+  let id x = x
+
+  let rec pp_s pp fmt xs =
+    let open Format in
+    let rec aux xs =
+      match xs with
+      | Nil -> fprintf fmt ""
+      | Cons (x, Nil) -> fprintf fmt "%a" pp x
+      | Cons (y, ys) -> fprintf fmt "%a; " pp y; aux ys
+    in
+    fprintf fmt "[";
+    aux xs;
+    fprintf fmt "]"
 end
 
 let qualified = [
-  "qualified abstract value", to_string Something.show_t, "<function>";
+  "qualified abstract value", to_string Something.id, "<function>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
-  "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "1 2 ";
-  "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "a b ";
+  "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "[1; 2]";
+  "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "[a; b]";
 ]
 
 let type_variables =
@@ -112,7 +131,7 @@ let higher_order =
     "string", showp PolyPrint.to_string "aaa", "aaa";
     "aliases 1", showp PolyPrint.string_of "aaa", "aaa";
     "aliases 2", showp PolyPrint.show "aaa", "aaa";
-    "unqualified", showp to_string 1, "'a";
+    "unqualified", showp to_string 1, "<function>";
   ]
 
 module Counter = struct
@@ -158,13 +177,11 @@ let logging =
     ("recursive log expression",
      let current = !count in
      ignore (fact_expr 5);
-     print !count;
      (!count - current) = 1);
 
     ("recursive log structure",
      let current = !count in
      ignore (fact_str 5);
-     print !count;
      (!count - current) = 1);
 
     ("recursive logrec expression",
