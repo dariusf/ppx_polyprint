@@ -17,45 +17,61 @@ let params_out_of_range name count =
 let logrec_used_on_nonrecursive_binding () =
   failwith @@ Printf.sprintf "[@logrec] cannot be used on a non-recursive binding"
 
-type log_config = string
+module LogConfig = struct
+
+  type t = {
+    module_prefix : string list;
+  }
+
+  let rec list_of_sequence seq =
+    match seq with
+    | { pexp_desc = Pexp_sequence (e, f) } -> e :: list_of_sequence f
+    | _ -> [seq]
+
+  let default_config = {
+    module_prefix = [Names.runtime; Names.default_module];
+  }
+
+  let interpret_one e config =
+    match e with
+    | { pexp_desc = Pexp_construct ({txt = Lident name}, None) } ->
+      (* a module *)
+      { config with module_prefix = [name] }
+    | _ -> config
+
+  let interpret attrs =
+    match attrs with
+    | [] -> default_config
+    | x :: _ -> (* TODO consider all, not just first *)
+      begin match x with
+        | _, PStr [{pstr_desc = Pstr_eval (seq, _)}] ->
+          let config_fields = list_of_sequence seq in
+          List.fold_right interpret_one config_fields default_config
+
+        (* default_config *)
+
+        (* Some name *)
+        (* | _, PStr [{pstr_desc = *)
+        (*               Pstr_eval ( *)
+        (*                 {pexp_desc = *)
+        (*                    Pexp_sequence *)
+        (*                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)}, *)
+        (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
+        (*            }] when name = "log" -> failwith "not yet implemented" *)
+        | _ -> default_config
+      end
+end
 
 let has_attr name attr =
   match attr with
   | { txt = n }, _ when n = name -> true
   | _ -> false
 
-let rec get_log_config attr =
-  match attr with
-  | [] -> None
-  | _ ->
-    begin match List.hd attr with
-      | _, PStr [{pstr_desc = Pstr_eval
-                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)} , _)}] ->
-        Some name
-      (* | _, PStr [{pstr_desc = *)
-      (*               Pstr_eval ( *)
-      (*                 {pexp_desc = *)
-      (*                    Pexp_sequence *)
-      (*                      ({pexp_desc = Pexp_construct ({txt = Lident name}, None)}, *)
-      (*                       {pexp_desc = Pexp_ident {txt = Lident "x"}})}, _) *)
-      (*            }] when name = "log" -> failwith "not yet implemented" *)
-      | _ -> None
-    end
-
 let extract_binding_info b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
   let fn_name = get_fn_name original_lhs in
   let params = collect_params original_rhs in
   (original_rhs, fn_name, params)
-
-let check_config attrs =
-  let config = get_log_config attrs in
-  let module_prefix =
-    match config with
-    | None -> [Names.runtime; Names.default_module]
-    | Some c -> [c]
-  in
-  module_prefix
 
 let count_params fn_name params =
   let count = List.length params in
@@ -73,8 +89,9 @@ let run_invocation fn_name params param_count module_prefix fn =
   in invocation
 
 let transform_binding_recursively attrs b =
+  let open LogConfig in
   let (original_rhs, fn_name, params) = extract_binding_info b in
-  let module_prefix = check_config attrs in
+  let config = interpret attrs in
   let param_count = count_params fn_name params in
   let nonrec_body =
     let nonrec_params = "self" :: params in
@@ -87,7 +104,7 @@ let transform_binding_recursively attrs b =
       let [%p pat_var (mangle fn_name)] = [%e nonrec_body] in
       let rec aux =
         [%e fun_of_params params
-              (run_invocation fn_name params param_count module_prefix
+              (run_invocation fn_name params param_count config.module_prefix
                  (app (ident (mangle fn_name)) [ident "aux"]));
         ] in [%e app_variables "aux" params]
     ] in
@@ -95,8 +112,9 @@ let transform_binding_recursively attrs b =
 
 (* rather than take attrs, these should take configs *)
 let transform_binding_nonrecursively attrs b =
+  let open LogConfig in
   let (original_rhs, fn_name, params) = extract_binding_info b in
-  let module_prefix = check_config attrs in
+  let config = interpret attrs in
   let param_count = count_params fn_name params in
   let new_rhs =
     let body = get_fn_body original_rhs in
@@ -109,7 +127,7 @@ let transform_binding_nonrecursively attrs b =
      so this is safe. *)
   let new_rhs = fun_of_params params [%expr
       let rec [%p pat_var (mangle fn_name)] = [%e new_rhs] in
-      [%e run_invocation fn_name params param_count module_prefix
+      [%e run_invocation fn_name params param_count config.module_prefix
             (ident (mangle fn_name))]]
   in
   { b with pvb_expr = new_rhs }
@@ -120,7 +138,8 @@ let transform_recursive_binding attrs b =
   else
     transform_binding_nonrecursively attrs b
 
-let transform_nonrecursive_binding = transform_binding_nonrecursively
+let transform_nonrecursive_binding =
+  transform_binding_nonrecursively
 
 let interesting_expr_binding rec_flag attrs binding =
   let has_attr =
