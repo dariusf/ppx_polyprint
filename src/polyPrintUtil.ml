@@ -10,6 +10,7 @@ module Names = struct
   let default_module = "Default"
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
+  let debug = "debug"
   let run_n n = "run" ^ string_of_int n
 end
 
@@ -252,9 +253,12 @@ module
     Printtyp.mark_loops ty;
     Format.asprintf "%a" Printtyp.type_expr ty
 
+  let string_of_expr e =
+    Pprintast.string_of_expression @@
+    Typpx.Untypeast.untype_expression e
+
   let print_expr e =
-    print_endline @@ Pprintast.string_of_expression @@
-    Typpx.Untypeast.untype_expression e;
+    print_endline @@ string_of_expr e
 
 end
 

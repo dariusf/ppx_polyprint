@@ -8,6 +8,8 @@ let show = to_string
 
 let print x = x |> to_string |> print_endline
 
+let debug = print
+
 type param_name = string
 type fn_name = string
 type value = string

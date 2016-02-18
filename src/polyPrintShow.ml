@@ -118,29 +118,31 @@ let transform_printer e args =
 module MapArg : TypedtreeMap.MapArgument = struct
   include TypedtreeMap.DefaultMapArgument
 
+  let rec implementations name fn args =
+    if List.mem name Names.to_string then
+      transform_printer fn args
+    else if name = Names.print then
+      tapp (tident "print_endline") [transform_printer fn args]
+    else if name = Names.debug then
+      let stringified =
+        args |> args_to_exprs |> List.map string_of_expr |> String.concat ", "
+      in
+      tapp (tident_ ["Printf"; "printf"])
+        [tstr "%s: %s\n"; tstr stringified;
+         implementations (List.hd Names.to_string) fn args]
+    else fn
+
   let enter_expression e =
     let open Path in
     match e.exp_desc with
     | Texp_apply
         ({exp_desc =
-            Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn, _), _loc, _) }, args)
+            Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn_name, _), _loc, _) }, args)
       when mod_name = Names.runtime ->
-
-      if List.mem fn Names.to_string then
-        transform_printer e args
-      else if fn = Names.print then
-        tapp (tident "print_endline") [transform_printer e args]
-      else e
-
-    | Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn, _), _loc, _)
+      implementations fn_name e args
+    | Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn_name, _), _loc, _)
       when mod_name = Names.runtime ->
-
-      if List.mem fn Names.to_string then
-        transform_printer e []
-      else if fn = Names.print then
-        tapp (tident "print_endline") [transform_printer e []]
-      else e
-
+      implementations fn_name e []
     | _ -> e
 
   let leave_expression e = e
