@@ -26,7 +26,6 @@ let constant_pp which args =
 let rec build_pp : Types.type_expr -> expression list -> expression =
   fun ty args ->
     let open Types in
-    (* print_endline @@ print_type ty; *)
     match ty.desc with
     | Tconstr (path_t, texprs, abbrev) ->
       begin
@@ -110,7 +109,6 @@ let transform_printer e args =
       let printer =
       tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
                                             build_pp ty []] @ (args_to_exprs args)) in
-      (* print_endline @@ Pprintast.string_of_expression @@ Typpx.Untypeast.untype_expression printer; *)
       { e with exp_desc = printer.exp_desc }
     | _ ->
       (* better error handling required *)

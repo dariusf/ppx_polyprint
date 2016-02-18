@@ -78,11 +78,17 @@ module Untyped = struct
         | _ -> default_mapper.expr mapper expr
     }
 
-  let pat_var name =
-    { ppat_desc = Ppat_var { txt = name; loc = dummy_loc };
-      ppat_loc = dummy_loc;
-      ppat_attributes = []
-    }
+  let pat_any () = {
+    ppat_desc = Ppat_any;
+    ppat_loc = dummy_loc;
+    ppat_attributes = []
+  }
+
+  let pat_var name = {
+    ppat_desc = Ppat_var { txt = name; loc = dummy_loc };
+    ppat_loc = dummy_loc;
+    ppat_attributes = []
+  }
 
   let rec collect_params f =
     match f with
@@ -91,10 +97,15 @@ module Untyped = struct
       param :: collect_params rest
     | _ -> []
 
-  let rec fun_of_params params body =
+  let rec fun_with_params params body =
     match params with
     | [] -> body
-    | p :: ps -> Exp.fun_ "" None (pat_var p) (fun_of_params ps body)
+    | p :: ps -> Exp.fun_ "" None (pat_var p) (fun_with_params ps body)
+
+  let rec fun_wildcards n body =
+    match n with
+    | 0 -> body
+    | _ -> Exp.fun_ "" None (pat_any ()) (fun_wildcards (n - 1) body)
 
   (* let binding pat expr = *)
   (*   { pvb_pat = pat; *)
@@ -109,9 +120,13 @@ module Untyped = struct
       pstr_loc = dummy_loc;
     }
 
+  let print_expr e =
+    print_endline @@ Pprintast.string_of_expression e
+
 end
 
-module Typed = struct
+module
+  Typed = struct
 
   open Typedtree
 
@@ -224,11 +239,6 @@ module Typed = struct
     | _ ->
       expr_from_desc @@ Texp_apply (exp, dummy_args args)
 
-  let print_type ty =
-    Printtyp.reset ();
-    Printtyp.mark_loops ty;
-    Format.asprintf "%a" Printtyp.type_expr ty
-
   let args_to_exprs args =
     let remove_opt a =
       match a with
@@ -236,6 +246,15 @@ module Typed = struct
       | None -> failwith "expected a to have a value"
     in
     args |> List.map (fun (_, a, _) -> a) |> List.map remove_opt
+
+  let print_type ty =
+    Printtyp.reset ();
+    Printtyp.mark_loops ty;
+    Format.asprintf "%a" Printtyp.type_expr ty
+
+  let print_expr e =
+    print_endline @@ Pprintast.string_of_expression @@
+    Typpx.Untypeast.untype_expression e;
 
 end
 

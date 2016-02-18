@@ -134,75 +134,116 @@ let higher_order =
     "unqualified", showp to_string 1, "<function>";
   ]
 
-module Counter = struct
+module TestConfig = struct
   include PolyPrint.Default
 
   let count = ref 0
+  let last = ref 0
+
+  let reset () =
+    count := 0;
+    last := 0
 
   let run1 fn_name (a_n, pr_a, a) pr_res f =
-    incr count; f a
+    incr count; last := 1; f a
 
   let run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
-    incr count; f a b
+    incr count; last := 2; f a b
 end
 
 let rec fact_str n =
   if n = 0 then 1 else n * fact_str (n - 1)
-  [@@log Counter]
+  [@@log TestConfig]
 
 let plus_str a b = a + b
-  [@@log Counter]
+  [@@log TestConfig]
 
 let rec fact_str_rec n =
   if n = 0 then 1 else n * fact_str_rec (n - 1)
-  [@@logrec Counter]
+  [@@logrec TestConfig]
 
 (* These will fail, but can't really be tested... *)
 
 (* let plus_str_rec a b = a + b *)
-(* [@@logrec Counter] *)
+(* [@@logrec TestConfig] *)
 
 (* let () = *)
-(* let [@logrec Counter] plus_expr_rec a b = a + b in () *)
+(* let [@logrec TestConfig] plus_expr_rec a b = a + b in () *)
 
 let logging =
-  let [@log Counter] rec fact_expr n =
+  let [@log TestConfig] rec fact_expr n =
     if n = 0 then 1 else n * fact_expr (n - 1)
   in
-  let [@log Counter] plus_expr a b = a + b in
-  let [@logrec Counter] rec fact_expr_rec n =
+  let [@log TestConfig] plus_expr a b = a + b in
+  let [@logrec TestConfig] rec fact_expr_rec n =
     if n = 0 then 1 else n * fact_expr_rec (n - 1)
   in
-  let open Counter in [
+  let open TestConfig in [
     ("recursive log expression",
-     let current = !count in
-     ignore (fact_expr 5);
-     (!count - current) = 1);
+     begin
+       reset ();
+       ignore (fact_expr 5);
+       !count = 1
+     end);
 
     ("recursive log structure",
-     let current = !count in
-     ignore (fact_str 5);
-     (!count - current) = 1);
+     begin
+       reset ();
+       ignore (fact_str 5);
+       !count  = 1
+     end);
 
     ("recursive logrec expression",
-     let current = !count in
-     ignore (fact_expr_rec 5);
-     (!count - current) = 6);
+     begin
+       reset ();
+       ignore (fact_expr_rec 5);
+       !count = 6
+     end);
 
     ("recursive logrec structure",
-     let current = !count in
-     ignore (fact_str_rec 5);
-     (!count - current) = 6);
+     begin
+       reset ();
+       ignore (fact_str_rec 5);
+       !count = 6
+     end);
 
     ("non-recursive log expression",
-     let current = !count in
-     ignore (plus_expr 2 3);
-     (!count - current) = 1);
+     begin
+       reset ();
+       ignore (plus_expr 2 3);
+       !count = 1
+     end);
 
     ("non-recursive log structure",
-     let current = !count in
-     ignore (plus_str 2 3);
-     (!count - current) = 1);
+     begin
+       reset ();
+       ignore (plus_str 2 3);
+       !count = 1
+     end);
+
+    ("non-recursive log structure",
+     begin
+       reset ();
+       ignore (plus_str 2 3);
+       !count = 1
+     end);
+
+    ("variable filtering",
+     let [@logrec TestConfig; a] rec var_filtering1 a b c d =
+       if a = 4 then 5
+       else var_filtering1 b c d a
+     in
+     let [@logrec TestConfig; a; b] rec var_filtering2 a b c d =
+       if a = 4 then 5
+       else var_filtering2 b c d a
+     in
+     reset ();
+     let a = !last = 0 in
+     ignore (var_filtering1 1 2 3 4);
+     let b = !last = 1 in
+     ignore (var_filtering2 1 2 3 4);
+     let c = !last = 2 in
+     a && b && c);
   ]
 
 let tests = [
