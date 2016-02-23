@@ -34,11 +34,15 @@ module LogConfig = struct
     vars = [];
   }
 
-  let interpret_one e config =
+  let rec interpret_one e config =
     match e with
     | { pexp_desc = Pexp_construct ({ txt = Lident name }, None) } ->
       (* a module *)
       { config with module_prefix = [name] }
+    | { pexp_desc = Pexp_tuple ts } ->
+      (* tuples are interchangeable with sequences for the most part,
+         but sequences may not be nested inside them *)
+      List.fold_right interpret_one ts config
     | { pexp_desc = Pexp_ident { txt = Lident name } } ->
       (* a variable name *)
       { config with vars = name :: config.vars }

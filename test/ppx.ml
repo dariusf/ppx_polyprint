@@ -233,7 +233,7 @@ let logging =
        if a = 4 then 5
        else var_filtering1 b c d a
      in
-     let [@logrec TestConfig; a; b] rec var_filtering2 a b c d =
+     let [@logrec TestConfig; a, b] rec var_filtering2 a b c d =
        if a = 4 then 5
        else var_filtering2 b c d a
      in
