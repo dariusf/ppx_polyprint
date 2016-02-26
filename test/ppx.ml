@@ -153,75 +153,75 @@ end
 
 let rec fact_str n =
   if n = 0 then 1 else n * fact_str (n - 1)
-  [@@log TestConfig]
+  [@@trace TestConfig]
 
 let plus_str a b = a + b
-  [@@log TestConfig]
+  [@@trace TestConfig]
 
 let rec fact_str_rec n =
   if n = 0 then 1 else n * fact_str_rec (n - 1)
-  [@@logrec TestConfig]
+  [@@tracerec TestConfig]
 
 (* These will fail, but can't really be tested... *)
 
 (* let plus_str_rec a b = a + b *)
-(* [@@logrec TestConfig] *)
+(* [@@tracerec TestConfig] *)
 
 (* let () = *)
-(* let [@logrec TestConfig] plus_expr_rec a b = a + b in () *)
+(* let [@tracerec TestConfig] plus_expr_rec a b = a + b in () *)
 
-let logging =
-  let [@log TestConfig] rec fact_expr n =
+let tracing =
+  let [@trace TestConfig] rec fact_expr n =
     if n = 0 then 1 else n * fact_expr (n - 1)
   in
-  let [@log TestConfig] plus_expr a b = a + b in
-  let [@logrec TestConfig] rec fact_expr_rec n =
+  let [@trace TestConfig] plus_expr a b = a + b in
+  let [@tracerec TestConfig] rec fact_expr_rec n =
     if n = 0 then 1 else n * fact_expr_rec (n - 1)
   in
   let open TestConfig in [
-    ("recursive log expression",
+    ("recursive trace expression",
      begin
        reset ();
        ignore (fact_expr 5);
        !count = 1
      end);
 
-    ("recursive log structure",
+    ("recursive trace structure",
      begin
        reset ();
        ignore (fact_str 5);
        !count  = 1
      end);
 
-    ("recursive logrec expression",
+    ("recursive tracerec expression",
      begin
        reset ();
        ignore (fact_expr_rec 5);
        !count = 6
      end);
 
-    ("recursive logrec structure",
+    ("recursive tracerec structure",
      begin
        reset ();
        ignore (fact_str_rec 5);
        !count = 6
      end);
 
-    ("non-recursive log expression",
+    ("non-recursive trace expression",
      begin
        reset ();
        ignore (plus_expr 2 3);
        !count = 1
      end);
 
-    ("non-recursive log structure",
+    ("non-recursive trace structure",
      begin
        reset ();
        ignore (plus_str 2 3);
        !count = 1
      end);
 
-    ("non-recursive log structure",
+    ("non-recursive trace structure",
      begin
        reset ();
        ignore (plus_str 2 3);
@@ -229,11 +229,11 @@ let logging =
      end);
 
     ("variable filtering",
-     let [@logrec TestConfig; a] rec var_filtering1 a b c d =
+     let [@tracerec TestConfig; a] rec var_filtering1 a b c d =
        if a = 4 then 5
        else var_filtering1 b c d a
      in
-     let [@logrec TestConfig; a, b] rec var_filtering2 a b c d =
+     let [@tracerec TestConfig; a, b] rec var_filtering2 a b c d =
        if a = 4 then 5
        else var_filtering2 b c d a
      in
@@ -252,5 +252,5 @@ let tests = [
   test_set "qualified" qualified;
   test_set "type variables" type_variables;
   test_set "higher-order" higher_order;
-  basic_test_set "logging" logging;
+  basic_test_set "tracing" tracing;
 ]

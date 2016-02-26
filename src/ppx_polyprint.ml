@@ -9,7 +9,7 @@ let composed_pre_mapper =
     expr = begin
       fun mapper expr ->
         expr
-        |> PolyPrintLog.mapper.expr PolyPrintLog.mapper
+        |> PolyPrintTrace.mapper.expr PolyPrintTrace.mapper
       (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
         |> PolyPrintShow.eta_expansion_mapper.expr PolyPrintShow.eta_expansion_mapper
       (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
@@ -17,7 +17,7 @@ let composed_pre_mapper =
     structure_item =
       fun mapper expr ->
         expr
-        |> PolyPrintLog.mapper.structure_item PolyPrintLog.mapper
+        |> PolyPrintTrace.mapper.structure_item PolyPrintTrace.mapper
       (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
         |> PolyPrintShow.eta_expansion_mapper.structure_item PolyPrintShow.eta_expansion_mapper
       (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)

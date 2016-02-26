@@ -14,10 +14,10 @@ let mangle fn_name =
 let params_out_of_range name count =
   failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
 
-let logrec_used_on_nonrecursive_binding () =
-  failwith @@ Printf.sprintf "[@logrec] cannot be used on a non-recursive binding"
+let tracerec_used_on_nonrecursive_binding () =
+  failwith @@ Printf.sprintf "[@tracerec] cannot be used on a non-recursive binding"
 
-module LogConfig = struct
+module TraceConfig = struct
 
   type t = {
     module_prefix : string list;
@@ -85,7 +85,7 @@ let filter_params names params =
   | _ -> List.filter (fun p -> List.mem p names) params
 
 let run_invocation fn_name params config fn =
-  let open LogConfig in
+  let open TraceConfig in
   let filtered_params = filter_params config.vars params in
   let filtered_param_count = List.length filtered_params in
   let run_fn_name = ident_dot
@@ -105,7 +105,7 @@ let run_invocation fn_name params config fn =
   invocation
 
 let transform_binding_recursively config b =
-  let open LogConfig in
+  let open TraceConfig in
   let (original_rhs, fn_name, params) = extract_binding_info b in
   count_params fn_name params;
   let nonrec_body =
@@ -126,7 +126,7 @@ let transform_binding_recursively config b =
   { b with pvb_expr = new_rhs }
 
 let transform_binding_nonrecursively config b =
-  let open LogConfig in
+  let open TraceConfig in
   let (original_rhs, fn_name, params) = extract_binding_info b in
   count_params fn_name params;
   let new_rhs =
@@ -146,26 +146,26 @@ let transform_binding_nonrecursively config b =
   { b with pvb_expr = new_rhs }
 
 let transform_recursive_binding attrs b =
-  let config = LogConfig.interpret attrs in
-  if any (has_attr "logrec") attrs then
+  let config = TraceConfig.interpret attrs in
+  if any (has_attr "tracerec") attrs then
     transform_binding_recursively config b
   else
     transform_binding_nonrecursively config b
 
 let transform_nonrecursive_binding attrs b =
-  let config = LogConfig.interpret attrs in
+  let config = TraceConfig.interpret attrs in
   transform_binding_nonrecursively config b
 
 let interesting_expr_binding rec_flag attrs binding =
   let has_attr =
     match rec_flag with
     | Nonrecursive ->
-      if any (has_attr "logrec") attrs then
-        logrec_used_on_nonrecursive_binding ()
+      if any (has_attr "tracerec") attrs then
+        tracerec_used_on_nonrecursive_binding ()
       else
-        any (has_attr "log") attrs
+        any (has_attr "trace") attrs
     | Recursive ->
-      any (has_attr "log") attrs || any (has_attr "logrec") attrs
+      any (has_attr "trace") attrs || any (has_attr "tracerec") attrs
   in has_attr && is_function_binding binding
 
 let interesting_str_binding rec_flag binding =

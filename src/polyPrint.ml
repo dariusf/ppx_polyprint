@@ -17,22 +17,22 @@ type value = string
 type 'a printer = 'a -> string
 type 'a param_spec = param_name * 'a printer * 'a
 
-module type LogSpec = sig
+module type TraceSpec = sig
 
-  (** High-level API, for configuring how logging appears. *)
+  (** High-level API, for configuring how tracing is performed. *)
 
   val sep : unit -> string
   val fn : fn_name -> string
   val arg : param_name -> value -> string
   val result : fn_name -> value -> string
 
-  (** Low-level API, for tweaks that fundamentally change how logging
-      is carried out. All the different arities need to be implemented
+  (** Low-level API, for tweaks that fundamentally change how function
+      tracing is done. All the different arities need to be implemented
       for consistency.
 
       There is no conceptual difference between all these functions of
       different arity: a function may be of any arity, depending on how
-      many parameters are being logged. *)
+      many parameters are being tracked. *)
 
   val print_result : string -> 'a printer -> 'a -> unit
 
@@ -119,7 +119,7 @@ module type LogSpec = sig
     'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
 end
 
-module Default : LogSpec = struct
+module Default : TraceSpec = struct
   open Printf
 
   (* TODO add an implementation that tracks recursion depth *)
