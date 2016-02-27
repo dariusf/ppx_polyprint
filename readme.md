@@ -7,13 +7,22 @@ A small library for convenient printf debugging and function tracing.
 
 `ppx_polyprint` is distributed via an opam package. It is not yet on opam itself as the API is still not stable, but a local copy may be pinned via `make up`, and it should work as per normal.
 
+As it is not on opam, the dependencies have to be installed manually.
+
+```
+opam install ppx_tools typpx alcotest
+
+# optional
+opam install ppx_deriving
+```
+
 You will need the `ocamlfind` package for the runtime library.
 
 ```
 # ocamlbuild
 true: package(ppx_polyprint)
 
-# Otherwise, ensure this flag is passed to `ocamlfind`
+# otherwise, ensure this flag is passed to ocamlfind
 -package ppx_polyprint
 ```
 
@@ -60,14 +69,14 @@ print "true"
 
 This may seem magical, but it's actually being replaced at compile-time with the appropriate monomorphic printer.
 
-Also available are `to_string`, `string_of`, and `show` (aliases of each other), which return a string representation of a value --
+Also available are `to_string`, `string_of`, and `show` (aliases of each other), which return a string representation of a value:
 
 ```ocaml
 print_endline (show 1)
 => 1
 ```
 
--- and `debug`, which is like `print`, but also outputs a representation of the expression it was made to print.
+There's also `debug`, which is like `print`, but additionally outputs a representation of the expression it was passed.
 
 ```ocaml
 let a = 1 in
@@ -77,7 +86,7 @@ print_endline (debug (a + a * 2))
 
 ## Function Tracing
 
-An annotation for let-bindings is also available. This helps generate the boilerplate for function-level tracing. The magic functions above help it automatically figure out printer types.
+This library is also helps generate the boilerplate for function-level tracing. Let-bound functions annotated with `[@@trace]` or `[@@tracerec]` will have their inputs and output printed to stdout.
 
 ```ocaml
 let rec fact n =
@@ -86,9 +95,7 @@ let rec fact n =
   [@@tracerec]
 ```
 
-For some unknown type `Module.t`, the printer that will be used is `Module.show_t`, following the conventions used by ppx_deriving. If this heuristic isn't sufficient, the printer name can be supplied manually (see below).
-
-Here's the default output of `fact 5`:
+Here's the default output of `fact 5` with `[@@tracerec]`, which tracks all recursive calls:
 
 ```
 fact <- n = 5
@@ -105,29 +112,31 @@ fact -> 24
 fact -> 120
 ```
 
-`[@@trace]` is also available for non-recursive tracing.
+The magic functions from earlier will be used to automatically figure out printer types.
+
+For some type `Module.t`, the printer that will be used is `Module.show_t`, following the conventions used by ppx_deriving. If this heuristic isn't sufficient, the printer name can be supplied manually (see below).
 
 Let-bindings in expression and structure context are annotated differently:
 
 ```ocaml
-(* Structure item *)
+(* structure item *)
 let plus x y = x + y
   [@@trace]
 
-(* Expression *)
+(* expression *)
 let [@trace] plus x y = x + y in ...
 ```
 
-Apart from using `@` instead of `@@`, structure annotations apply only to one specific binding when there are several (as opposed to expression annotations, which apply to all bindings). In the following snippet, both `plus` and `minus` are being traced.
+Apart from using `@@` instead of `@`, structure annotations apply only to one specific binding when there are several (as opposed to expression annotations, which apply to all bindings). In the following snippet, both `plus` and `minus` will be traced.
 
 ```ocaml
-(* Structure bindings may be annotated separately: *)
+(* structure bindings may be annotated separately *)
 let plus x y = x + y
   [@@trace]
 and minus x y = x - y
   [@@trace]
 
-(* Expression bindings may not *)
+(* expression bindings may not *)
 let [@trace] plus x y = x + y
 and minus x y = x - y
 ```
@@ -151,7 +160,7 @@ let plus x y = x + y
   [@@trace Custom]
 ```
 
-Refer to the signature of `TraceSpec` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like printing format), but low-level control is also possible, allowing the customisation of details like where tracing output goes, how to deal with recursive calls, etc.
+Refer to the signature of `TraceSpec` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like printing format), but low-level control is also possible, allowing the customisation of details like where output goes, adding more information to recursive calls, etc.
 
 #### Selectively tracing parameter values
 
@@ -165,7 +174,7 @@ let triple x y z = (x, y, 1)
 
 If the list is empty, all parameters will be included, but otherwise only the parameters listed will be.
 
-Options can be associated with each identifier, for example, to override the printer to use. This is done by suffixing identifiers with a record.
+Options can be associated with each identifier, for example, to override the printer to use. This is done by suffixing each identifier with a record.
 
 ```ocaml
 let triple x y z = (x, y, z)
