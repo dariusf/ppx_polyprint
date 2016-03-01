@@ -8,6 +8,18 @@ open Parsetree
 open PolyPrintUtil
 open PolyPrintUtil.Untyped
 
+module Environment = struct
+  (** Information passed across ppx invocations *)
+
+  (** Names of annotated functions that were successfully transformed.Built up
+      during AST traversal. Stateful, and thus mappers here are not reentrant. *)
+  let transformed_function_names = ref ([] : string list)
+
+  (** Configuration module path provided for each function name *)
+  module NameConfigMap = Map.Make(String)
+  let configuration_modules = ref NameConfigMap.empty
+end
+
 let mangle fn_name =
   fn_name ^ "_original"
 
@@ -65,10 +77,18 @@ let has_attr name attr =
   | { txt = n }, _ when n = name -> true
   | _ -> false
 
-let extract_binding_info b =
+let extract_binding_info config b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
   let fn_name = get_fn_name original_lhs in
   let params = collect_params original_rhs in
+
+  (* Collect info to add to the environment *)
+  let open TraceConfig in
+  let open Environment in
+  push fn_name transformed_function_names;
+  configuration_modules :=
+    NameConfigMap.add fn_name config.module_prefix !configuration_modules;
+
   (original_rhs, fn_name, params)
 
 (* TODO truncate, don't fail *)
@@ -101,12 +121,11 @@ let run_invocation fn_name params config fn =
       [[%expr PolyPrint.show]];
       [final_fn]])
   in
-  print_expr invocation;
   invocation
 
 let transform_binding_recursively config b =
   let open TraceConfig in
-  let (original_rhs, fn_name, params) = extract_binding_info b in
+  let (original_rhs, fn_name, params) = extract_binding_info config b in
   count_params fn_name params;
   let nonrec_body =
     let nonrec_params = "self" :: params in
@@ -127,7 +146,7 @@ let transform_binding_recursively config b =
 
 let transform_binding_nonrecursively config b =
   let open TraceConfig in
-  let (original_rhs, fn_name, params) = extract_binding_info b in
+  let (original_rhs, fn_name, params) = extract_binding_info config b in
   count_params fn_name params;
   let new_rhs =
     let body = get_fn_body original_rhs in
@@ -192,7 +211,7 @@ let transform_str rec_flag transform mapper bindings =
   let new_bindings = List.map change bindings in
   item @@ Pstr_value (rec_flag, new_bindings)
 
-let mapper =
+let annotation_mapper =
   { default_mapper with
     expr =
       begin
@@ -224,3 +243,33 @@ let mapper =
         end
       | s -> default_mapper.structure_item mapper s
   }
+
+(** A mapper that wraps call sites of annotated functions based on the
+    environment computed so far *)
+let call_wrapping_mapper =
+  { default_mapper with
+    expr = fun mapper expr ->
+      let open TraceConfig in
+      let open Environment in
+      match expr with
+      | { pexp_desc =
+            Pexp_apply
+              ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } } as fn, args) }
+        when List.mem fn_name !transformed_function_names ->
+
+        let n = clamp 1 7 (List.length args) in
+        let module_prefix =
+          try
+            NameConfigMap.find fn_name !configuration_modules
+          with Not_found -> default_config.module_prefix
+        in
+        Exp.apply
+          (ident_dot (module_prefix @ [Names.call_n n]))
+          (("", Exp.tuple
+              [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
+               Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
+           ("", fn) :: args)
+
+      | _ -> default_mapper.expr mapper expr
+  }
+

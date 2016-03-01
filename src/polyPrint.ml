@@ -13,9 +13,12 @@ let debug = print
 type param_name = string
 type fn_name = string
 type value = string
+type file_path = string
+type line_number = int
 
 type 'a printer = 'a -> string
 type 'a param_spec = param_name * 'a printer * 'a
+type loc = file_path * line_number
 
 module type TraceSpec = sig
 
@@ -117,6 +120,14 @@ module type TraceSpec = sig
     'f param_spec ->
     'g param_spec ->
     'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
+
+  val call1 : loc -> ('a -> 'b) -> 'a -> 'b
+  val call2 : loc -> ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
+  val call3 : loc -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd
+  val call4 : loc -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e
+  val call5 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f
+  val call6 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g
+  val call7 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
 end
 
 module Default : TraceSpec = struct
@@ -195,6 +206,14 @@ module Default : TraceSpec = struct
     let res = fn a b c d e f g in
     print_result fn_name pr_res res;
     res
+
+  let call1 _ fn a = fn a
+  let call2 _ fn a b = fn a b
+  let call3 _ fn a b c = fn a b c
+  let call4 _ fn a b c d = fn a b c d
+  let call5 _ fn a b c d e = fn a b c d e
+  let call6 _ fn a b c d e f = fn a b c d e f
+  let call7 _ fn a b c d e f g = fn a b c d e f g
 end
 
 module Printers = struct

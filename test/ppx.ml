@@ -140,6 +140,8 @@ module TestConfig = struct
   let count = ref 0
   let last = ref 0
 
+  let called = ref false
+
   let reset () =
     count := 0;
     last := 0
@@ -149,6 +151,9 @@ module TestConfig = struct
 
   let run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
     incr count; last := 2; f a b
+
+  let call1 _ f a =
+    called := true; f a
 end
 
 let rec fact_str n =
@@ -244,6 +249,15 @@ let tracing =
      ignore (var_filtering2 1 2 3 4);
      let c = !last = 2 in
      a && b && c);
+
+    ("call wrapping",
+     let [@trace TestConfig] rather_unique a = a in
+     reset ();
+     let a = not !called in
+     ignore @@ rather_unique 1;
+     let b = !called in
+     a && b
+    );
   ]
 
 let tests = [

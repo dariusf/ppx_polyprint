@@ -12,6 +12,7 @@ module Names = struct
   let print = "print"
   let debug = "debug"
   let run_n n = "run" ^ string_of_int n
+  let call_n n = "call" ^ string_of_int n
 end
 
 let dummy_loc =
@@ -26,6 +27,15 @@ let all f xs =
 
 let any f xs =
   List.fold_left (fun t c -> t || f c) false xs
+
+let push x xs =
+  xs := x :: !xs
+
+let clear xs =
+  xs := []
+
+let clamp l h x =
+  max l (min h x)
 
 module Untyped = struct
 

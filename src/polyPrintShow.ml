@@ -115,7 +115,7 @@ let transform_printer e args =
       failwith (Printf.sprintf "no function in the API has %d arguments" (List.length args))
   end
 
-module MapArg : TypedtreeMap.MapArgument = struct
+module TypedTransform : TypedtreeMap.MapArgument = struct
   include TypedtreeMap.DefaultMapArgument
 
   let rec implementations name fn args =
@@ -195,4 +195,3 @@ let eta_expansion_mapper =
         { item with pstr_desc = Pstr_value (rec_flag, new_bindings) }
       | s -> default_mapper.structure_item mapper s
   }
-
