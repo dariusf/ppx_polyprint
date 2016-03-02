@@ -20,7 +20,7 @@ type 'a printer = 'a -> string
 type 'a param_spec = param_name * 'a printer * 'a
 type loc = file_path * line_number
 
-module type TraceSpec = sig
+module type TraceConfig = sig
 
   (** High-level API, for configuring how tracing is performed. *)
 
@@ -130,7 +130,7 @@ module type TraceSpec = sig
   val call7 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
 end
 
-module Default : TraceSpec = struct
+module DefaultTraceConfig : TraceConfig = struct
   open Printf
 
   (* TODO add an implementation that tracks recursion depth *)

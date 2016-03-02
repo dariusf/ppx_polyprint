@@ -135,7 +135,7 @@ let higher_order =
   ]
 
 module TestConfig = struct
-  include PolyPrint.Default
+  include DefaultTraceConfig
 
   let count = ref 0
   let last = ref 0
@@ -158,7 +158,7 @@ module TestConfig = struct
 end
 
 module OtherwiseDefault = struct
-  include PolyPrint.Default
+  include DefaultTraceConfig
 
   let called = ref false
 

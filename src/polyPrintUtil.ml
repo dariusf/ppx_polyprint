@@ -7,7 +7,7 @@ open Longident
 module Names = struct
   let runtime = "PolyPrint"
   let printers = "Printers"
-  let default_module = "Default"
+  let default_module = "DefaultTraceConfig"
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
   let debug = "debug"

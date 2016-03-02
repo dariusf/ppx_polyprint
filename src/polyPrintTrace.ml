@@ -32,7 +32,7 @@ let params_out_of_range name count =
 let tracerec_used_on_nonrecursive_binding () =
   failwith @@ Printf.sprintf "[@tracerec] cannot be used on a non-recursive binding"
 
-module TraceConfig = struct
+module Config = struct
 
   type t = {
     module_prefix : string list;
@@ -93,7 +93,7 @@ let extract_binding_info config b =
   let params = collect_params original_rhs in
 
   (* Collect info to add to the environment *)
-  let open TraceConfig in
+  let open Config in
   let open Environment in
   push fn_name transformed_function_names;
   configuration_modules :=
@@ -115,7 +115,7 @@ let filter_params names params =
   | _ -> List.filter (fun p -> List.mem p names) params
 
 let run_invocation fn_name params config fn =
-  let open TraceConfig in
+  let open Config in
   let filtered_params = filter_params config.vars params in
   let filtered_param_count = List.length filtered_params in
   let run_fn_name = ident_dot
@@ -134,7 +134,7 @@ let run_invocation fn_name params config fn =
   invocation
 
 let transform_binding_recursively config b =
-  let open TraceConfig in
+  let open Config in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   count_params fn_name params;
   let nonrec_body =
@@ -155,7 +155,7 @@ let transform_binding_recursively config b =
   { b with pvb_expr = new_rhs }
 
 let transform_binding_nonrecursively config b =
-  let open TraceConfig in
+  let open Config in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   count_params fn_name params;
   let new_rhs =
@@ -175,14 +175,14 @@ let transform_binding_nonrecursively config b =
   { b with pvb_expr = new_rhs }
 
 let transform_recursive_binding attrs b =
-  let config = TraceConfig.interpret attrs in
+  let config = Config.interpret attrs in
   if any (has_attr "tracerec") attrs then
     transform_binding_recursively config b
   else
     transform_binding_nonrecursively config b
 
 let transform_nonrecursive_binding attrs b =
-  let config = TraceConfig.interpret attrs in
+  let config = Config.interpret attrs in
   transform_binding_nonrecursively config b
 
 let interesting_expr_binding rec_flag attrs binding =
@@ -226,7 +226,6 @@ let check_for_annotation item =
   | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr [{
       pstr_desc = Pstr_eval ({
           pexp_desc = Pexp_construct ({ txt = Lident module_name }, None)}, _) }]) } ->
-    print_endline @@ ">> " ^ module_name;
       Environment.specified_default_module := Some [module_name]
   | _ -> ()
 
@@ -272,7 +271,7 @@ let annotation_mapper =
 let call_wrapping_mapper =
   { default_mapper with
     expr = fun mapper expr ->
-      let open TraceConfig in
+      let open Config in
       let open Environment in
       match expr with
       | { pexp_desc =
