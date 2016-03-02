@@ -37,6 +37,11 @@ let clear xs =
 let clamp l h x =
   max l (min h x)
 
+let otherwise default e =
+  match e with
+  | None -> default
+  | Some x -> x
+
 module Untyped = struct
 
   open Parsetree

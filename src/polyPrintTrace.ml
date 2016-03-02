@@ -9,7 +9,7 @@ open PolyPrintUtil
 open PolyPrintUtil.Untyped
 
 module Environment = struct
-  (** Information passed across ppx invocations *)
+  (** Information passed across traversals *)
 
   (** Names of annotated functions that were successfully transformed.Built up
       during AST traversal. Stateful, and thus mappers here are not reentrant. *)
@@ -18,6 +18,9 @@ module Environment = struct
   (** Configuration module path provided for each function name *)
   module NameConfigMap = Map.Make(String)
   let configuration_modules = ref NameConfigMap.empty
+
+  (** The default module to use if not explicitly given *)
+  let specified_default_module = ref (None : string list option)
 end
 
 let mangle fn_name =
@@ -46,6 +49,12 @@ module TraceConfig = struct
     vars = [];
   }
 
+  (** Indirection for getting the default module in the face of stateful
+      configuration variables. Should be removed when this extension can be
+      parameterised by it *)
+  let default_module () =
+    otherwise default_config.module_prefix !Environment.specified_default_module
+
   let rec interpret_one e config =
     match e with
     | { pexp_desc = Pexp_construct ({ txt = Lident name }, None) } ->
@@ -62,14 +71,15 @@ module TraceConfig = struct
 
   let interpret attrs =
     match attrs with
-    | [] -> default_config
+    | [] -> { default_config with module_prefix = default_module () }
     | x :: _ -> (* TODO consider all, not just first *)
       begin match x with
         | _, PStr [{pstr_desc = Pstr_eval (seq, _)}] ->
           let config_fields = list_of_sequence seq in
-          List.fold_right interpret_one config_fields default_config
-        | _ -> default_config
-      end
+          List.fold_right interpret_one config_fields
+            { default_config with module_prefix = default_module () }
+        | _ -> { default_config with module_prefix = default_module () }
+      end 
 end
 
 let has_attr name attr =
@@ -211,6 +221,18 @@ let transform_str rec_flag transform mapper bindings =
   let new_bindings = List.map change bindings in
   item @@ Pstr_value (rec_flag, new_bindings)
 
+let check_for_annotation item =
+  match item with
+  | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr [{
+      pstr_desc = Pstr_eval ({
+          pexp_desc = Pexp_construct ({ txt = Lident module_name }, None)}, _) }]) } ->
+    print_endline @@ ">> " ^ module_name;
+      Environment.specified_default_module := Some [module_name]
+  | _ -> ()
+
+(** A mapper that generates tracing boilerplate for annotated functions.
+    The traversal is also used to collect information to build up the environment
+    for future traversals. *)
 let annotation_mapper =
   { default_mapper with
     expr =
@@ -230,6 +252,7 @@ let annotation_mapper =
           | x -> default_mapper.expr mapper x;
       end;
     structure_item = fun mapper item ->
+      check_for_annotation item;
       match item with
       | { pstr_desc = Pstr_value (rec_flag, bindings) } ->
         begin
@@ -261,7 +284,7 @@ let call_wrapping_mapper =
         let module_prefix =
           try
             NameConfigMap.find fn_name !configuration_modules
-          with Not_found -> default_config.module_prefix
+          with Not_found -> default_module ()
         in
         Exp.apply
           (ident_dot (module_prefix @ [Names.call_n n]))

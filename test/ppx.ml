@@ -144,13 +144,26 @@ module TestConfig = struct
 
   let reset () =
     count := 0;
-    last := 0
+    last := 0;
+    called := false
 
   let run1 fn_name (a_n, pr_a, a) pr_res f =
     incr count; last := 1; f a
 
   let run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
     incr count; last := 2; f a b
+
+  let call1 _ f a =
+    called := true; f a
+end
+
+module OtherwiseDefault = struct
+  include PolyPrint.Default
+
+  let called = ref false
+
+  let reset () =
+    called := false
 
   let call1 _ f a =
     called := true; f a
@@ -174,6 +187,9 @@ let rec fact_str_rec n =
 
 (* let () = *)
 (* let [@tracerec TestConfig] plus_expr_rec a b = a + b in () *)
+
+(* has to be here for now, or the test fails *)
+[@@@polyprint OtherwiseDefault]
 
 let tracing =
   let [@trace TestConfig] rec fact_expr n =
@@ -251,13 +267,20 @@ let tracing =
      a && b && c);
 
     ("call wrapping",
-     let [@trace TestConfig] rather_unique a = a in
+     let [@trace TestConfig] rather_unique x = x in
      reset ();
      let a = not !called in
      ignore @@ rather_unique 1;
      let b = !called in
-     a && b
-    );
+     a && b);
+
+    ("default annotation",
+     let [@trace] id x = x in
+     OtherwiseDefault.reset ();
+     let a = not !OtherwiseDefault.called in
+     ignore @@ id 1;
+     let b = !OtherwiseDefault.called in
+     a && b);
   ]
 
 let tests = [
