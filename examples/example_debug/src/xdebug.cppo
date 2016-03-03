@@ -1,0 +1,110 @@
+#define n_binfo_hp Debug.binfo_hprint
+#define n_binfo_pp Debug.binfo_pprint
+#define n_binfo_zp Debug.binfo_zprint
+#define x_loc (build_loc_str __FILE__ __LINE__)
+#define x_tbi ((build_loc_str __FILE__ __LINE__)^"TBI")
+#define fail_tbi (failwith ((build_loc_str __FILE__ __LINE__)^"TBI"))
+#ifdef TRACE
+#define x_info_hp (fun f -> \
+  Debug.binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define x_info_pp (fun s -> \
+  Debug.binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_info_zp (fun s -> \
+  Debug.binfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define x_binfo_hp (fun f -> \
+  Debug.binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define x_binfo_pp (fun s -> \
+  Debug.binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_binfo_zp (fun s -> \
+  Debug.binfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define x_tinfo_hp (fun f -> \
+  Debug.tinfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define x_tinfo_pp (fun s -> \
+  Debug.tinfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_tinfo_zp (fun s -> \
+  Debug.tinfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define x_dinfo_hp (fun f -> \
+  Debug.dinfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define x_dinfo_pp (fun s -> \
+  Debug.dinfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_dinfo_zp (fun s -> \
+  Debug.dinfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define x_winfo_pp (fun s -> \
+  Debug.winfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_winfo_hp (fun f -> \
+  Debug.binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define x_winfo_zp (fun s -> \
+  Debug.binfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define x_report_error (fun lc s -> \
+  Gen.report_error lc ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define x_ninfo_hp (fun pr s p -> ())
+#define x_ninfo_pp (fun s p -> ())
+#define x_ninfo_zp (fun s p -> ())
+#define y_info_hp (fun f -> \
+  Debug.y_binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define y_info_pp (fun s -> \
+  Debug.y_binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define y_binfo_hp (fun f -> \
+  Debug.y_binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define y_binfo_pp (fun s -> \
+  Debug.y_binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define y_binfo_zp (fun s -> \
+  Debug.y_binfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define y_tinfo_hp (fun f -> \
+  Debug.y_tinfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define y_tinfo_pp (fun s -> \
+  Debug.y_tinfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define y_tinfo_zp (fun s -> \
+  Debug.y_tinfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define y_dinfo_hp (fun f -> \
+  Debug.y_dinfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define y_dinfo_pp (fun s -> \
+  Debug.y_dinfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define y_dinfo_zp (fun s -> \
+  Debug.y_dinfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define y_winfo_pp (fun s -> \
+  Debug.y_winfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#define y_winfo_hp (fun f -> \
+  Debug.y_binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)))
+#define y_winfo_zp (fun s -> \
+  Debug.y_binfo_zprint (lazy ((VarGen.build_loc_str __FILE__ __LINE__)^(Lazy.force s))))
+#define y_ninfo_hp (fun pr s -> ())
+#define y_ninfo_pp (fun s > ())
+#define y_ninfo_zp (fun s -> ())
+#define y_bres_hp (fun f r -> \
+  let () = Debug.y_binfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)) r in r)
+#define y_tres_hp (fun f r -> \
+  let () = Debug.y_tinfo_hprint (fun x -> (VarGen.build_loc_str __FILE__ __LINE__)^(f x)) r in r)
+#define x_add_0 (fun f -> let () = Debug.wrap_z_debug VarGen.store_loc_str  __FILE__ __LINE__ in f)
+#define x_add_1 (fun f x -> let () = Debug.wrap_z_debug VarGen.store_loc_str  __FILE__ __LINE__ in f x)
+#define x_add (fun f x y -> let () = Debug.wrap_z_debug VarGen.store_loc_str  __FILE__ __LINE__ in f x y)
+#define x_add_3 (fun f a b c -> let () = Debug.wrap_z_debug VarGen.store_loc_str  __FILE__ __LINE__ in f a b c)
+#define x_noop
+#define x_todo (fun s -> \
+  Debug.y_binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^"TODO: "^s))
+#define x_nodo (fun s -> \
+  Debug.y_tinfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^"TODO: "^s))
+#define x_warn (fun s -> \
+  Debug.y_binfo_pprint ((VarGen.build_loc_str __FILE__ __LINE__)^"WARNING: "^s))
+#define x_fail (fun s -> \
+  failwith ((VarGen.build_loc_str __FILE__ __LINE__)^s))
+#else
+#define x_binfo_hp Debug.binfo_hprint
+#define x_binfo_pp Debug.binfo_pprint 
+#define x_binfo_zp Debug.binfo_zprint 
+#define x_tinfo_hp Debug.tinfo_hprint 
+#define x_tinfo_pp Debug.tinfo_pprint 
+#define x_tinfo_zp Debug.tinfo_zprint 
+#define x_dinfo_hp Debug.dinfo_hprint 
+#define x_dinfo_pp Debug.dinfo_pprint 
+#define x_dinfo_zp Debug.dinfo_zprint
+#define x_winfo_pp Debug.winfo_pprint
+#define x_winfo_hp Debug.binfo_hprint
+cd inc#define x_winfo_zp Debug.binfo_zprint 
+#define x_ninfo_hp (fun pr s p -> ())
+#define x_ninfo_pp (fun s p -> ())
+#define x_add 
+#define x_add_1
+#define x_add_3
+#define x_noop
+#endif

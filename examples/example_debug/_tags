@@ -1,0 +1,4 @@
+true: package(str), annot, package(ppx_polyprint), polyprint_native, pp(cppo -D TRACE)
+
+#<*.{cmo}>: ppx(../../ppx_polyprint/ppx_polyprint.native)
+#<*.{cmo}>: ppx($(ocamlfind query ppx_polyprint)/ppx_polyprint.native)
