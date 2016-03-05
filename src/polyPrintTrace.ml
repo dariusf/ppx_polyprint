@@ -23,9 +23,6 @@ module Environment = struct
   let specified_default_module = ref (None : string list option)
 end
 
-let mangle fn_name =
-  fn_name ^ "_original"
-
 let params_out_of_range name count =
   failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
 
@@ -148,11 +145,11 @@ let transform_binding_recursively config b =
     fun_with_params nonrec_params new_body
   in
   let new_rhs = fun_with_params params [%expr
-      let [%p pat_var (mangle fn_name)] = [%e nonrec_body] in
+      let [%p pat_var (Names.mangle fn_name)] = [%e nonrec_body] in
       let rec aux =
         [%e fun_with_params params
               (run_invocation fn_name params config
-                 (app (ident (mangle fn_name)) [ident "aux"]));
+                 (app (ident (Names.mangle fn_name)) [ident "aux"]));
         ] in [%e app_variables "aux" params]
     ] in
   { b with pvb_expr = new_rhs }
@@ -163,7 +160,7 @@ let transform_binding_nonrecursively config b =
   count_params fn_name params;
   let new_rhs =
     let body = get_fn_body original_rhs in
-    let mapper = app_mapper fn_name (mangle fn_name) in
+    let mapper = app_mapper fn_name (Names.mangle fn_name) in
     let new_body = mapper.expr mapper body in
     fun_with_params params new_body
   in
@@ -171,9 +168,9 @@ let transform_binding_nonrecursively config b =
      Non-recursive functions wouldn't have recursive references,
      so this is safe. *)
   let new_rhs = fun_with_params params [%expr
-      let rec [%p pat_var (mangle fn_name)] = [%e new_rhs] in
+      let rec [%p pat_var (Names.mangle fn_name)] = [%e new_rhs] in
       [%e run_invocation fn_name params config
-            (ident (mangle fn_name))]]
+            (ident (Names.mangle fn_name))]]
   in
   { b with pvb_expr = new_rhs }
 

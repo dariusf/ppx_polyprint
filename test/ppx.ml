@@ -1,13 +1,14 @@
 
 open Test_util
 open PolyPrint
+open Format
 
 type record = { a : int; b : string }
 (* [@@deriving show] *)
 
 (* this can be removed when the typpx-deriving bug is fixed *)
-let show_record { a; b } =
-  "{ a = " ^ string_of_int a ^ "; b = " ^ b ^ " }"
+let pp_record fmt { a; b } =
+  fprintf fmt "{ a = %d; b = %s }" a b
 
 class some_class =
   object (self)
@@ -22,7 +23,7 @@ class some_class =
 
 (* this needs to be defined *)
 let pp_some_class fmt sc =
-  Format.fprintf fmt "%s" sc#to_string
+  fprintf fmt "%s" sc#to_string
 
 let singleton_obj = object
   val v = 1
@@ -45,13 +46,14 @@ let simple = [
   "int list", to_string [1; 2], "[1; 2]";
   "bool list", to_string [true; false], "[true; false]";
   "ref", to_string (ref 1), "ref 1";
-  "object", to_string (new some_class), "this is some class";
-  "object", (to_string singleton_obj), "< meth : int >";
-  (* "exn", to_string (Failure "what"), "Failure(\"what\")"; *)
-  (* "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }"; *)
-  (* "int32", (to_string (Int32.of_int 45)), "45"; *)
-  (* "int64", (to_string (Int64.of_int 74)), "74"; *)
-  (* "nativeint", (to_string (Nativeint.of_int 65)), "65"; *)
+  "object (of class)", to_string (new some_class), "this is some class";
+  "object (singleton)", (to_string singleton_obj), "< meth : int >";
+  "exn", to_string (Failure "what"), "Failure(\"what\")";
+  "record", to_string { a = 1; b = "hi" }, "{ a = 1; b = hi }";
+  "int32", to_string (Int32.of_int 45), "45";
+  "int64", to_string (Int64.of_int 74), "74";
+  "nativeint", to_string (Nativeint.of_int 65), "65";
+  "unit", to_string (), "()";
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b
@@ -86,7 +88,7 @@ struct
      as the printers will be absent. *)
   (* [@@deriving show] *)
 
-  let pp_t = Format.pp_print_int
+  let pp_t = pp_print_int
 
   let thing = 1
 
@@ -96,7 +98,6 @@ struct
   let id x = x
 
   let rec pp_s pp fmt xs =
-    let open Format in
     let rec aux xs =
       match xs with
       | Nil -> fprintf fmt ""

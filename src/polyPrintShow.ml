@@ -9,19 +9,18 @@ open PolyPrintUtil
 open PolyPrintUtil.Typed
 
 let constant_pp which args =
-    match which with
-    | "string" -> tapp (tident_ ["Format"; "pp_print_string"]) args
-    | "int" -> tapp (tident_ ["Format"; "pp_print_int"]) args
-    | "bool" -> tapp (tident_ ["Format"; "pp_print_bool"]) args
-    | "char" -> tapp (tident_ ["Format"; "pp_print_char"]) args
-    | "float" -> tapp (tident_ ["Format"; "pp_print_float"]) args
-    (* | "int32" -> "string_of_int32" *)
-    (* | "int64" -> "string_of_int64" *)
-    (* | "nativeint" -> "string_of_nativeint" *)
-    (* | "exn" -> "string_of_exn" *)
-    | _ -> failwith @@ "printer for constant type " ^ which ^ " not implemented"
-  (* in *)
-  (* tapp (qualified name) args *)
+  match which with
+  | "string" -> tapp (tident_ ["Format"; "pp_print_string"]) args
+  | "int" -> tapp (tident_ ["Format"; "pp_print_int"]) args
+  | "bool" -> tapp (tident_ ["Format"; "pp_print_bool"]) args
+  | "char" -> tapp (tident_ ["Format"; "pp_print_char"]) args
+  | "float" -> tapp (tident_ ["Format"; "pp_print_float"]) args
+  | "int32" -> tapp (tapp (qualified "pp_int32") []) args
+  | "int64" -> tapp (tapp (qualified "pp_int64") []) args
+  | "nativeint" -> tapp (tapp (qualified "pp_nativeint") []) args
+  | "exn" -> tapp (tapp (qualified "pp_exc") []) args
+  | "unit" -> tapp (tapp (qualified "pp_unit") []) args
+  | _ -> failwith @@ "printer for constant type " ^ which ^ " not implemented"
 
 let rec build_pp : Types.type_expr -> expression list -> expression =
   fun ty args ->
@@ -34,17 +33,11 @@ let rec build_pp : Types.type_expr -> expression list -> expression =
           match path_t with
           | Pident { Ident.name; _ } ->
             begin match name with
-              | ("int" | "string" | "bool" | "char" | "float") as name ->
-              (* | "exn" | "int32" | "int64" | "nativeint") *)
+              | ("int" | "string" | "bool" | "char" | "float" | "unit" |
+                 "exn" | "int32" | "int64" | "nativeint") as name ->
                 constant_pp name args
-              | "list" ->
-                tapp (tapp (qualified "pp_list")
-                        (List.map (fun t -> build_pp t []) texprs)) args
-              | "option" ->
-                tapp (tapp (qualified "pp_option")
-                        (List.map (fun t -> build_pp t []) texprs)) args
-              | "ref" ->
-                tapp (tapp (qualified "pp_ref")
+              | ("list" | "option" | "ref") ->
+                tapp (tapp (qualified ("pp_" ^ name))
                         (List.map (fun t -> build_pp t []) texprs)) args
               | t ->
                 tapp (tapp (tident ("pp_" ^ t))
@@ -93,8 +86,8 @@ let transform_printer e args =
       begin match e.exp_desc with
         | Texp_ident (_, _, { val_type = ty }) ->
 
-      let printer =
-      tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty []] in
+          let printer =
+            tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty []] in
           begin match ty.desc with
             | Tarrow (_, a, b, _) ->
               { e with exp_desc = printer.exp_desc }
@@ -107,8 +100,8 @@ let transform_printer e args =
     | ["", Some ({ exp_type = ty } as _a), Required] ->
       (* printers are called with a single argument *)
       let printer =
-      tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
-                                            build_pp ty []] @ (args_to_exprs args)) in
+        tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
+                                                build_pp ty []] @ (args_to_exprs args)) in
       { e with exp_desc = printer.exp_desc }
     | _ ->
       (* better error handling required *)
@@ -167,23 +160,23 @@ let eta_expansion_mapper =
   { default_mapper with
     expr = begin
       fun mapper expr ->
-      match expr.pexp_desc with
-      | Pexp_apply
-          ({ pexp_desc =
-               Pexp_ident ({ txt = Ldot (Lident mod_name, _) }) } as f, args)
-        when mod_name = Names.runtime ->
+        match expr.pexp_desc with
+        | Pexp_apply
+            ({ pexp_desc =
+                 Pexp_ident ({ txt = Ldot (Lident mod_name, _) }) } as f, args)
+          when mod_name = Names.runtime ->
 
-        { expr with
-          pexp_desc = Pexp_apply
-              (f, List.map (fun (l, a) -> l, mapper.expr mapper a) args) }
+          { expr with
+            pexp_desc = Pexp_apply
+                (f, List.map (fun (l, a) -> l, mapper.expr mapper a) args) }
 
-      | Pexp_ident ({ txt = Ldot (Lident mod_name, _) })
-        when mod_name = Names.runtime ->
+        | Pexp_ident ({ txt = Ldot (Lident mod_name, _) })
+          when mod_name = Names.runtime ->
 
-        (* TODO try to replace pat_var and these patterns with metaquot *)
-        { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
+          (* TODO try to replace pat_var and these patterns with metaquot *)
+          { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
 
-      | _ -> default_mapper.expr mapper expr
+        | _ -> default_mapper.expr mapper expr
     end;
     structure_item = fun mapper item ->
       match item with

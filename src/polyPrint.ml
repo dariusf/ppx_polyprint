@@ -244,6 +244,21 @@ module Printers = struct
   let pp_ref pp fmt x =
     fprintf fmt "ref %a" pp !x
 
+  let pp_unit fmt x =
+    fprintf fmt "()"
+
+  let pp_exc fmt x =
+    fprintf fmt "%s" (Printexc.to_string x)
+
+  let pp_int32 fmt x =
+    fprintf fmt "%ld" x
+
+  let pp_int64 fmt x =
+    fprintf fmt "%Ld" x
+
+  let pp_nativeint fmt x =
+    fprintf fmt "%nd" x
+
   let rec pp_list pp fmt xs =
     let rec aux xs =
       match xs with
