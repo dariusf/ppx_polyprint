@@ -3,53 +3,7 @@
 
 A small library for convenient printf debugging and function tracing.
 
-## Installation
-
-`ppx_polyprint` is distributed via an opam package. It is not yet on opam itself as the API is still not stable, but a local copy may be pinned via `make up`, and it should work as per normal.
-
-As it is not on opam, the dependencies have to be installed manually.
-
-```
-opam install ppx_tools typpx alcotest
-
-# optional
-opam install ppx_deriving
-```
-
-You will need the `ocamlfind` package for the runtime library.
-
-```
-# ocamlbuild
-true: package(ppx_polyprint)
-
-# otherwise, ensure this flag is passed to ocamlfind
--package ppx_polyprint
-```
-
-In addition, the ppx preprocessor must be manually registered using `-ppx`. This is a temporary workaround for [a Merlin limitation](https://github.com/the-lambda-church/merlin/issues/483#issuecomment-182274832) and will be removed when that is fixed.
-
-With `ocamlbuild`, one way is to add the following flags to `myocamlbuild.ml`,
-
-```ocaml
-open Ocamlbuild_plugin
-
-let () = dispatch (
-  function
-  | After_rules ->
-    flag ["ocaml"; "compile"; "polyprint_byte"] &
-      S [A "-ppx"; A "$(ocamlfind query ppx_polyprint)/ppx_polyprint.byte"];
-    flag ["ocaml"; "compile"; "polyprint_native"] &
-      S [A "-ppx"; A "$(ocamlfind query ppx_polyprint)/ppx_polyprint.native"]
-  | _ -> ())
-```
-
-then add the tag `polyprint_native` or `polyprint_byte` to your source files.
-
-```
-true: polyprint_native
-```
-
-If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_polyprint)/ppx_polyprint.native` manually to `ocamlfind`.
+[Installation instructions](#installation).
 
 ## Inspecting Values
 
@@ -150,8 +104,10 @@ Options can be passed to `trace` and `tracerec` to customise how tracing is perf
 A module can be used to selectively override parts of the tracing process. Here's a typical way to use it.
 
 ```ocaml
-module Custom : PolyPrint.TraceSpec = struct
-  include PolyPrint.Default
+open PolyPrint
+
+module Custom : TraceConfig = struct
+  include DefaultTraceConfig
 
   (* Your customisations here *)
 end
@@ -160,7 +116,24 @@ let plus x y = x + y
   [@@trace Custom]
 ```
 
-Refer to the signature of `TraceSpec` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like printing format), but low-level control is also possible, allowing the customisation of details like where output goes, adding more information to recursive calls, etc.
+Refer to the signature of `TraceConfig` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like the printing format), but low-level control is also possible, allowing the customisation of details like where output goes, adding more information to recursive calls, etc.
+
+If you are using a build tool which automatically discovers module dependencies (`ocamldep`/`ocamlbuild`) and the configuration module is in another file, it needs to be referenced from somewhere other than the `[@trace]` annotation for it to be picked up as a dependency. Here's an easy way to ensure this.
+
+```ocaml
+(* file: config.ml *)
+open PolyPrint
+
+module Custom : TraceConfig = struct
+  include DefaultTraceConfig
+end
+
+(* wherever else Custom is passed to [@trace] *)
+open Config
+
+let plus x y = x + y
+  [@@trace Custom]
+```
 
 #### Selectively tracing parameter values
 
@@ -180,6 +153,54 @@ Options can be associated with each identifier, for example, to override the pri
 let triple x y z = (x, y, z)
   [@@trace x {printer = string_of_int}, y]
 ```
+
+## Installation
+
+`ppx_polyprint` is distributed via an opam package. It is not yet on opam itself as the API is still not stable, but a local copy may be pinned via `make up`, and it should work as per normal.
+
+As it is not on opam, the dependencies have to be installed manually.
+
+```
+opam install ppx_tools typpx alcotest
+
+# optional
+opam install ppx_deriving
+```
+
+The runtime library must first be included.
+
+```
+# ocamlbuild
+true: package(ppx_polyprint)
+
+# otherwise, ensure this flag is passed to ocamlfind
+-package ppx_polyprint
+```
+
+In addition, the ppx preprocessor must be manually registered using `-ppx`. This is a temporary workaround for [a Merlin limitation](https://github.com/the-lambda-church/merlin/issues/483#issuecomment-182274832) and will be removed when that is fixed.
+
+With `ocamlbuild`, one way is to add the following flags to `myocamlbuild.ml`,
+
+```ocaml
+open Ocamlbuild_plugin
+
+let () = dispatch (
+  function
+  | After_rules ->
+    flag ["ocaml"; "compile"; "polyprint_byte"] &
+      S [A "-ppx"; A "$(ocamlfind query ppx_polyprint)/ppx_polyprint.byte"];
+    flag ["ocaml"; "compile"; "polyprint_native"] &
+      S [A "-ppx"; A "$(ocamlfind query ppx_polyprint)/ppx_polyprint.native"]
+  | _ -> ())
+```
+
+then add the tag `polyprint_native` or `polyprint_byte` to your source files.
+
+```
+true: polyprint_native
+```
+
+If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_polyprint)/ppx_polyprint.native` manually to `ocamlfind`.
 
 ## Internals
 
