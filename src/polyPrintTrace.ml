@@ -60,6 +60,9 @@ module Config = struct
     | { pexp_desc = Pexp_construct ({ txt = Lident name }, None) } ->
       (* a module *)
       { config with module_prefix = [name] }
+    | { pexp_desc = Pexp_construct ({ txt = path }, None) } ->
+      (* a qualified module *)
+      { config with module_prefix = longident_to_list path }
     | { pexp_desc = Pexp_tuple ts } ->
       (* tuples are interchangeable with sequences for the most part,
          but sequences may not be nested inside them *)
@@ -225,8 +228,8 @@ let check_for_annotation item =
   match item with
   | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr [{
       pstr_desc = Pstr_eval ({
-          pexp_desc = Pexp_construct ({ txt = Lident module_name }, None)}, _) }]) } ->
-      Environment.specified_default_module := Some [module_name]
+          pexp_desc = Pexp_construct ({ txt = path }, None)}, _) }]) } ->
+      Environment.specified_default_module := Some (longident_to_list path)
   | _ -> ()
 
 (** A mapper that generates tracing boilerplate for annotated functions.

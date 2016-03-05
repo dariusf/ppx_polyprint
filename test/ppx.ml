@@ -157,16 +157,18 @@ module TestConfig = struct
     called := true; f a
 end
 
-module OtherwiseDefault = struct
-  include DefaultTraceConfig
+module Otherwise = struct
+  module Default = struct
+    include DefaultTraceConfig
 
-  let called = ref false
+    let called = ref false
 
-  let reset () =
-    called := false
+    let reset () =
+      called := false
 
-  let call1 _ f a =
-    called := true; f a
+    let call1 _ f a =
+      called := true; f a
+  end
 end
 
 let rec fact_str n =
@@ -189,7 +191,7 @@ let rec fact_str_rec n =
 (* let [@tracerec TestConfig] plus_expr_rec a b = a + b in () *)
 
 (* has to be here for now, or the test fails *)
-[@@@polyprint OtherwiseDefault]
+[@@@polyprint Otherwise.Default]
 
 let tracing =
   let [@trace TestConfig] rec fact_expr n =
@@ -276,10 +278,10 @@ let tracing =
 
     ("default annotation",
      let [@trace] id x = x in
-     OtherwiseDefault.reset ();
-     let a = not !OtherwiseDefault.called in
+     Otherwise.Default.reset ();
+     let a = not !Otherwise.Default.called in
      ignore @@ id 1;
-     let b = !OtherwiseDefault.called in
+     let b = !Otherwise.Default.called in
      a && b);
   ]
 

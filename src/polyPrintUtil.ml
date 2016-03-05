@@ -123,26 +123,23 @@ module Untyped = struct
     | 0 -> body
     | _ -> Exp.fun_ "" None (pat_any ()) (fun_wildcards (n - 1) body)
 
-  (* let binding pat expr = *)
-  (*   { pvb_pat = pat; *)
-  (*     pvb_expr = expr; *)
-  (*     pvb_loc = dummy_loc; *)
-  (*     pvb_attributes = [] *)
-  (*   } *)
-
-  let item desc =
-    {
-      pstr_desc = desc;
-      pstr_loc = dummy_loc;
-    }
+  let rec longident_to_list li =
+    match li with
+    | Lident name -> [name]
+    | Ldot (a, b) -> longident_to_list a @ [b]
+    | Lapply _ -> failwith "longident apply cannot be converted"
+    
+  let item desc = {
+    pstr_desc = desc;
+    pstr_loc = dummy_loc;
+  }
 
   let print_expr e =
     print_endline @@ Pprintast.string_of_expression e
 
 end
 
-module
-  Typed = struct
+module Typed = struct
 
   open Typedtree
 
