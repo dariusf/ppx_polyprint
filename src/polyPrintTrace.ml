@@ -23,9 +23,6 @@ module Environment = struct
   let specified_default_module = ref (None : string list option)
 end
 
-let tracerec_used_on_nonrecursive_binding () =
-  failwith @@ Printf.sprintf "[@tracerec] cannot be used on a non-recursive binding"
-
 module Config = struct
 
   type t = {
@@ -100,11 +97,8 @@ let extract_binding_info config b =
 
 let count_params fn_name params =
   let actual = List.length params in
-  if actual < 1 then
-    failwith "ppx_polyprint doesn't support tracing functions with no parameters";
-  let clamped = clamp 1 7 actual in
-  if clamped <> actual then
-    Printf.printf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d\n" fn_name actual;
+  let clamped = clamp 0 7 actual in
+  if clamped <> actual then Errors.warn_too_many_params fn_name actual;
   clamped
 
 (** We only take parameters within the list, but if it is empty,
@@ -112,7 +106,12 @@ let count_params fn_name params =
 let filter_params names params =
   match names with
   | [] -> params
-  | _ -> List.filter (fun p -> List.mem p names) params
+  | _ ->
+    let p = function
+      | Unit -> true
+      | Param p -> List.mem p names
+    in
+    List.filter p params
 
 let run_invocation fn_name params config fn =
   let open Config in
@@ -123,11 +122,15 @@ let run_invocation fn_name params config fn =
   let final_fn =
     if filtered_param_count = List.length params then fn
     else
-      fun_wildcards filtered_param_count (app fn (List.map ident params))
+      fun_wildcards filtered_param_count (app fn (List.map param_to_expr params))
   in
   let invocation = app run_fn_name (List.concat [
       [str fn_name];
-      List.map (fun p -> Exp.tuple [str p; [%expr PolyPrint.show]; ident p]) filtered_params;
+      List.map (fun p -> Exp.tuple [
+          str (show_param p);
+          [%expr PolyPrint.show];
+          param_to_expr p
+        ]) filtered_params;
       [[%expr PolyPrint.show]];
       [final_fn]])
   in
@@ -138,7 +141,7 @@ let transform_binding_recursively config b =
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   ignore (count_params fn_name params);
   let nonrec_body =
-    let nonrec_params = (Names.self fn_name) :: params in
+    let nonrec_params = Param (Names.self fn_name) :: params in
     let body = get_fn_body original_rhs in
     let mapper = app_mapper fn_name (Names.self fn_name) in
     let new_body = mapper.expr mapper body in
@@ -167,12 +170,12 @@ let transform_binding_nonrecursively config b =
   (* let rec is used here when transforming recursive functions.
      Non-recursive functions wouldn't have recursive references,
      so this is safe. *)
-  let new_rhs = fun_with_params params [%expr
+  let new_rhs' = fun_with_params params [%expr
       let rec [%p pat_var (Names.mangle fn_name)] = [%e new_rhs] in
       [%e run_invocation fn_name params config
             (ident (Names.mangle fn_name))]]
   in
-  { b with pvb_expr = new_rhs }
+  { b with pvb_expr = new_rhs' }
 
 let transform_recursive_binding attrs b =
   let config = Config.interpret attrs in
@@ -186,16 +189,16 @@ let transform_nonrecursive_binding attrs b =
   transform_binding_nonrecursively config b
 
 let interesting_expr_binding rec_flag attrs binding =
-  let has_attr =
+  let has_attribute =
     match rec_flag with
     | Nonrecursive ->
       if any (has_attr "tracerec") attrs then
-        tracerec_used_on_nonrecursive_binding ()
+        Errors.tracerec_used_on_nonrecursive_binding ()
       else
         any (has_attr "trace") attrs
     | Recursive ->
       any (has_attr "trace") attrs || any (has_attr "tracerec") attrs
-  in has_attr && is_function_binding binding
+  in has_attribute && is_function_binding binding
 
 let interesting_str_binding rec_flag binding =
   let attrs = binding.pvb_attributes in

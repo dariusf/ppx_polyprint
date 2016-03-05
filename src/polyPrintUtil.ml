@@ -21,11 +21,13 @@ module Names = struct
     else String.sub name 0 (length - 5)
 end
 
-let dummy_loc = {
-  Location.loc_start = Lexing.dummy_pos;
-  Location.loc_end = Lexing.dummy_pos;
-  Location.loc_ghost = true
-}
+module Errors = struct
+  let tracerec_used_on_nonrecursive_binding () =
+    failwith @@ Printf.sprintf "[@tracerec] cannot be used on a non-recursive binding"
+
+  let warn_too_many_params =
+    Printf.printf "Warning: %s was given %d arguments but this library only supports up to 7.\n"
+end
 
 let all f xs =
   List.fold_left (fun t c -> t && f c) true xs
@@ -47,6 +49,12 @@ let otherwise default e =
   | None -> default
   | Some x -> x
 
+let dummy_loc = {
+  Location.loc_start = Lexing.dummy_pos;
+  Location.loc_end = Lexing.dummy_pos;
+  Location.loc_ghost = true
+}
+
 module Untyped = struct
 
   open Parsetree
@@ -55,10 +63,6 @@ module Untyped = struct
     match pat with
     | { ppat_desc = Ppat_var { txt = fn_name }; _ } -> fn_name
     | _ -> failwith "not a function pattern"
-
-  let app_variables f args =
-    let ident s = Exp.ident { txt = Lident s; loc = dummy_loc } in
-    Exp.apply (ident f) (List.map (fun a -> "", ident a) args)
 
   let app f args =
     Exp.apply f (List.map (fun a -> "", a) args)
@@ -87,19 +91,7 @@ module Untyped = struct
     | { pexp_desc = Pexp_fun (_, _, _, b) } -> get_fn_body b
     | _ -> pexp
 
-  let app_mapper find replace =
-    { default_mapper with
-      expr = fun mapper expr ->
-        match expr with
-        | { pexp_desc =
-              Pexp_apply
-                ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } }, args) }
-          when fn_name = find ->
-          Exp.apply (Exp.ident { txt=Lident replace; loc }) args
-        | _ -> default_mapper.expr mapper expr
-    }
-
-  let pat_any () = {
+  let pat_any = {
     ppat_desc = Ppat_any;
     ppat_loc = dummy_loc;
     ppat_attributes = []
@@ -111,22 +103,52 @@ module Untyped = struct
     ppat_attributes = []
   }
 
+  let pat_unit = {
+    ppat_desc = Ppat_construct ({ txt = Lident "()"; loc = dummy_loc }, None);
+    ppat_loc = dummy_loc;
+    ppat_attributes = []
+  }
+
+  type param = Param of string | Unit
+
+  let show_param p =
+    match p with
+    | Unit -> "()"
+    | Param x -> x
+
   let rec collect_params f =
     match f with
     | { pexp_desc = Pexp_fun (_, _, {
         ppat_desc = Ppat_var { txt = param; _ }; _ }, rest ) } ->
-      param :: collect_params rest
+      Param param :: collect_params rest
+    | { pexp_desc = Pexp_fun (_, _, {
+        ppat_desc = Ppat_construct ({txt = Lident "()"}, None); _ }, rest ) } ->
+      Unit :: collect_params rest
     | _ -> []
+
+  let param_to_expr p =
+    match p with
+    | Unit -> Exp.construct ({ txt = Lident "()"; loc = dummy_loc }) None
+    | Param name -> Exp.ident { txt = Lident name; loc = dummy_loc }
+
+  let app_variables f args =
+    Exp.apply (ident f) (List.map (fun a -> "", param_to_expr a) args)
 
   let rec fun_with_params params body =
     match params with
     | [] -> body
-    | p :: ps -> Exp.fun_ "" None (pat_var p) (fun_with_params ps body)
+    | p :: ps ->
+      let p' = 
+        match p with
+        | Param x -> pat_var x
+        | Unit -> pat_unit
+      in Exp.fun_ "" None p' (fun_with_params ps body)
 
+  (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
   let rec fun_wildcards n body =
     match n with
     | 0 -> body
-    | _ -> Exp.fun_ "" None (pat_any ()) (fun_wildcards (n - 1) body)
+    | _ -> Exp.fun_ "" None pat_any (fun_wildcards (n - 1) body)
 
   let rec longident_to_list li =
     match li with
@@ -141,6 +163,18 @@ module Untyped = struct
 
   let print_expr e =
     print_endline @@ Pprintast.string_of_expression e
+
+  let app_mapper find replace =
+    { default_mapper with
+      expr = fun mapper expr ->
+        match expr with
+        | { pexp_desc =
+              Pexp_apply
+                ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } }, args) }
+          when fn_name = find ->
+          Exp.apply (Exp.ident { txt=Lident replace; loc }) args
+        | _ -> default_mapper.expr mapper expr
+    }
 
 end
 
