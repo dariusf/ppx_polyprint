@@ -23,9 +23,6 @@ module Environment = struct
   let specified_default_module = ref (None : string list option)
 end
 
-let params_out_of_range name count =
-  failwith @@ Printf.sprintf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d" name count
-
 let tracerec_used_on_nonrecursive_binding () =
   failwith @@ Printf.sprintf "[@tracerec] cannot be used on a non-recursive binding"
 
@@ -101,11 +98,14 @@ let extract_binding_info config b =
 
   (original_rhs, fn_name, params)
 
-(* TODO truncate, don't fail *)
 let count_params fn_name params =
-  let count = List.length params in
-  if count < 1 || count > 7 then
-    params_out_of_range fn_name count
+  let actual = List.length params in
+  if actual < 1 then
+    failwith "ppx_polyprint doesn't support tracing functions with no parameters";
+  let clamped = clamp 1 7 actual in
+  if clamped <> actual then
+    Printf.printf "ppx_polyprint only supports functions with between 1 and 7 parameters, but %s was given %d\n" fn_name actual;
+  clamped
 
 (** We only take parameters within the list, but if it is empty,
     we don't filter at all. *)
@@ -136,7 +136,7 @@ let run_invocation fn_name params config fn =
 let transform_binding_recursively config b =
   let open Config in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
-  count_params fn_name params;
+  ignore (count_params fn_name params);
   let nonrec_body =
     let nonrec_params = (Names.self fn_name) :: params in
     let body = get_fn_body original_rhs in
@@ -157,7 +157,7 @@ let transform_binding_recursively config b =
 let transform_binding_nonrecursively config b =
   let open Config in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
-  count_params fn_name params;
+  ignore (count_params fn_name params);
   let new_rhs =
     let body = get_fn_body original_rhs in
     let mapper = app_mapper fn_name (Names.mangle fn_name) in
@@ -280,7 +280,7 @@ let call_wrapping_mapper =
         when List.mem fn_name !transformed_function_names ||
              List.mem (Names.unself fn_name) !transformed_function_names ->
 
-        let n = clamp 1 7 (List.length args) in
+        let n = count_params fn_name args in
         let module_prefix =
           try
             NameConfigMap.find fn_name !configuration_modules
