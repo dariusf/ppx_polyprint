@@ -1,0 +1,4 @@
+true: package(ppx_polyprint ppx_deriving.show), polyprint_native
+
+#<*.{cmo}>: ppx(../../ppx_polyprint/ppx_polyprint.native)
+#<*.{cmo}>: ppx($(ocamlfind query ppx_polyprint)/ppx_polyprint.native)
