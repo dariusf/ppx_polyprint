@@ -138,9 +138,9 @@ let transform_binding_recursively config b =
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   count_params fn_name params;
   let nonrec_body =
-    let nonrec_params = "self" :: params in
+    let nonrec_params = (Names.self fn_name) :: params in
     let body = get_fn_body original_rhs in
-    let mapper = app_mapper fn_name "self" in
+    let mapper = app_mapper fn_name (Names.self fn_name) in
     let new_body = mapper.expr mapper body in
     fun_with_params nonrec_params new_body
   in
@@ -277,12 +277,16 @@ let call_wrapping_mapper =
       | { pexp_desc =
             Pexp_apply
               ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } } as fn, args) }
-        when List.mem fn_name !transformed_function_names ->
+        when List.mem fn_name !transformed_function_names ||
+             List.mem (Names.unself fn_name) !transformed_function_names ->
 
         let n = clamp 1 7 (List.length args) in
         let module_prefix =
           try
             NameConfigMap.find fn_name !configuration_modules
+          with Not_found ->
+          try
+            NameConfigMap.find (Names.unself fn_name) !configuration_modules
           with Not_found -> default_module ()
         in
         Exp.apply

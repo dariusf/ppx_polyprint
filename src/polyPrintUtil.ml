@@ -14,14 +14,18 @@ module Names = struct
   let run_n n = "run" ^ string_of_int n
   let call_n n = "call" ^ string_of_int n
   let mangle fn_name = fn_name ^ "_original"
+  let self name = name ^ "_self"
+  let unself name =
+    let length = String.length name in
+    if length < 5 then name
+    else String.sub name 0 (length - 5)
 end
 
-let dummy_loc =
-  {
-    Location.loc_start = Lexing.dummy_pos;
-    Location.loc_end = Lexing.dummy_pos;
-    Location.loc_ghost = true
-  }
+let dummy_loc = {
+  Location.loc_start = Lexing.dummy_pos;
+  Location.loc_end = Lexing.dummy_pos;
+  Location.loc_ghost = true
+}
 
 let all f xs =
   List.fold_left (fun t c -> t && f c) true xs
