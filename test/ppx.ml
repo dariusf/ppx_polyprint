@@ -36,7 +36,6 @@ let simple = [
   "string", to_string "something", "something";
   "char", to_string 'a', "a";
   "float", to_string 1.2, "1.2";
-  "function", to_string (fun x -> x), "<function>";
   "tuple", to_string (1, 2), "(1, 2)";
   "tuple3", to_string (1, 2, 3), "(1, 2, 3)";
   "tuple4", to_string (1, 2, 3, 4), "(1, 2, 3, 4)";
@@ -54,6 +53,11 @@ let simple = [
   "int64", to_string (Int64.of_int 74), "74";
   "nativeint", to_string (Nativeint.of_int 65), "65";
   "unit", to_string (), "()";
+]
+
+let functions = [
+  "function literal", show (fun x -> x), "<function: fun x -> x>";
+  "function variable", (let y x = x in show y), "<function: y>";
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b
@@ -110,7 +114,7 @@ struct
 end
 
 let qualified = [
-  "qualified abstract value", to_string Something.id, "<function>";
+  "qualified abstract value", to_string Something.id, "<function: Something.id>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
   "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "[1; 2]";
   "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "[a; b]";
@@ -288,6 +292,7 @@ let tracing =
 
 let tests = [
   test_set "simple" simple;
+  test_set "functions" functions;
   test_set "compound" compound;
   test_set "qualified" qualified;
   test_set "type variables" type_variables;

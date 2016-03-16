@@ -53,7 +53,16 @@ let rec build_pp : Types.type_expr -> expression option -> expression =
         in name
       end
     | Tarrow _ ->
-      qualified "pp_function"
+      begin match arg with
+        | None -> qualified "pp_function"
+        | Some a ->
+              tapp (qualified "pp_function_rep") [tstr (show_expr a)]
+          (* begin match a with *)
+            (* | { exp_desc = Texp_function _ } -> *)
+              (* tapp (qualified "pp_function_rep") [tstr (show_expr a)] *)
+            (* | _ -> tapp (qualified "pp_function_rep") [tstr (show_expr a)] *)
+          (* end *)
+      end
     | Ttuple tys ->
       let length = List.length tys in
       assert (length >= 2 && length <= 7);
@@ -121,7 +130,7 @@ module TypedTransform : TypedtreeMap.MapArgument = struct
       tapp (tident "print_endline") [transform_printer fn args]
     else if name = Names.debug then
       let stringified =
-        args |> args_to_exprs |> List.map string_of_expr |> String.concat ", "
+        args |> args_to_exprs |> List.map show_expr |> String.concat ", "
       in
       tapp (tident_ ["Printf"; "printf"])
         [tstr "%s: %s\n"; tstr stringified;

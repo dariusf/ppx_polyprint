@@ -1,6 +1,5 @@
 
 open Ast_mapper
-open Ast_helper
 open Asttypes
 open Longident
 
@@ -49,6 +48,17 @@ let otherwise default e =
   | None -> default
   | Some x -> x
 
+let string_of_list pr xs =
+  let rec aux xs =
+    match xs with
+    | [] -> ""
+    | [x] -> pr x
+    | y :: ys -> pr y ^ "; " ^ aux ys
+  in "[" ^ aux xs ^ "]"
+
+let replace needle haystack =
+  Str.global_replace (Str.regexp needle) haystack
+
 let dummy_loc = {
   Location.loc_start = Lexing.dummy_pos;
   Location.loc_end = Lexing.dummy_pos;
@@ -57,6 +67,7 @@ let dummy_loc = {
 
 module Untyped = struct
 
+  open Ast_helper
   open Parsetree
 
   let get_fn_name pat =
@@ -304,12 +315,13 @@ module Typed = struct
     Printtyp.mark_loops ty;
     Format.asprintf "%a" Printtyp.type_expr ty
 
-  let string_of_expr e =
-    Pprintast.string_of_expression @@
-    Typpx.Untypeast.untype_expression e
+  let show_expr e = e
+    |> Typpx.Untypeast.untype_expression
+    |> Pprintast.string_of_expression
+    |> replace "[ ]+" " "
 
   let print_expr e =
-    print_endline @@ string_of_expr e
+    print_endline @@ show_expr e
 
 end
 

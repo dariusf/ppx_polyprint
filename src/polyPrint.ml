@@ -272,6 +272,8 @@ module Printers = struct
 
   let pp_function fmt _ = fprintf fmt "<function>"
 
+  let pp_function_rep f fmt _ = fprintf fmt "<function: %s>" f
+
   let pp_misc s fmt _ = fprintf fmt "%s" s
 
   let pp_tuple pr_a pr_b fmt (a, b) =
