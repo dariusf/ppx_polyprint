@@ -8,22 +8,23 @@ open Typedtree
 open PolyPrintUtil
 open PolyPrintUtil.Typed
 
-let constant_pp which args =
-  match which with
-  | "string" -> tapp (tident_ ["Format"; "pp_print_string"]) args
-  | "int" -> tapp (tident_ ["Format"; "pp_print_int"]) args
-  | "bool" -> tapp (tident_ ["Format"; "pp_print_bool"]) args
-  | "char" -> tapp (tident_ ["Format"; "pp_print_char"]) args
-  | "float" -> tapp (tident_ ["Format"; "pp_print_float"]) args
-  | "int32" -> tapp (tapp (qualified "pp_int32") []) args
-  | "int64" -> tapp (tapp (qualified "pp_int64") []) args
-  | "nativeint" -> tapp (tapp (qualified "pp_nativeint") []) args
-  | "exn" -> tapp (tapp (qualified "pp_exc") []) args
-  | "unit" -> tapp (tapp (qualified "pp_unit") []) args
-  | _ -> failwith @@ "printer for constant type " ^ which ^ " not implemented"
+let constant_pp primitive =
+  match primitive with
+  | "string" ->  tident_ ["Format"; "pp_print_string"]
+  | "int" ->  tident_ ["Format"; "pp_print_int"]
+  | "bool" ->  tident_ ["Format"; "pp_print_bool"]
+  | "char" ->  tident_ ["Format"; "pp_print_char"]
+  | "float" ->  tident_ ["Format"; "pp_print_float"]
+  | "int32" ->  tapp (qualified "pp_int32") []
+  | "int64" ->  tapp (qualified "pp_int64") []
+  | "nativeint" ->  tapp (qualified "pp_nativeint") []
+  | "exn" ->  tapp (qualified "pp_exc") []
+  | "unit" ->  tapp (qualified "pp_unit") []
+  | _ -> failwith @@ "printer for primitive type " ^ primitive ^ " not implemented"
 
-let rec build_pp : Types.type_expr -> expression list -> expression =
-  fun ty args ->
+(** Given the type and value of a function argument, reconstruct the printer for it.*)
+let rec build_pp : Types.type_expr -> expression option -> expression =
+  fun ty arg ->
     let open Types in
     match ty.desc with
     | Tconstr (path_t, texprs, abbrev) ->
@@ -35,41 +36,41 @@ let rec build_pp : Types.type_expr -> expression list -> expression =
             begin match name with
               | ("int" | "string" | "bool" | "char" | "float" | "unit" |
                  "exn" | "int32" | "int64" | "nativeint") as name ->
-                constant_pp name args
+                constant_pp name
               | ("list" | "option" | "ref") ->
-                tapp (tapp (qualified ("pp_" ^ name))
-                        (List.map (fun t -> build_pp t []) texprs)) args
+                tapp (qualified ("pp_" ^ name))
+                  (List.map (fun t -> build_pp t None) texprs)
               | t ->
-                tapp (tapp (tident ("pp_" ^ t))
-                        (List.map (fun t -> build_pp t []) texprs)) args
+                tapp (tident ("pp_" ^ t))
+                  (List.map (fun t -> build_pp t None) texprs)
             end
           | Pdot (Pident { Ident.name = prefix; _ }, name, _) when prefix = "Pervasives"->
-            build_pp { ty with desc = Tconstr (pident name, texprs, abbrev) } args
+            build_pp { ty with desc = Tconstr (pident name, texprs, abbrev) } arg
           | Pdot (prefix, t, _) ->
-            tapp (tapp (tident_with_path prefix ("pp_" ^ t))
-                    (List.map (fun t -> build_pp t []) texprs)) args
+            tapp (tident_with_path prefix ("pp_" ^ t))
+              (List.map (fun t -> build_pp t None) texprs)
           | _ -> failwith "Papply not yet implemented"
         in name
       end
     | Tarrow _ ->
-      tapp (qualified "pp_function") args
+      qualified "pp_function"
     | Ttuple tys ->
       let length = List.length tys in
       assert (length >= 2 && length <= 7);
       let suffix = if length = 2 then "" else string_of_int length in
       let name = "pp_tuple" ^ suffix in
-      tapp (tapp (qualified name) (List.map (fun t -> build_pp t []) tys)) args
-    | Tlink t -> build_pp t args
+      tapp (qualified name) (List.map (fun t -> build_pp t None) tys)
+    | Tlink t -> build_pp t arg
     | Tvar v -> (* what is v? monomorphic type from value restriction? *)
       begin
         match v with
         | Some v ->
-          tapp (tapp (qualified "pp_tvar") [tstr v]) args
+          tapp (qualified "pp_tvar") [tstr v]
         | None ->
-          tapp (tapp (qualified "pp_tvar") [tstr ""]) args
+          tapp (qualified "pp_tvar") [tstr ""]
       end
     | Tobject (t, _) ->
-      tapp (tapp (qualified "pp_misc") [tstr (print_type t)]) args
+      tapp (qualified "pp_misc") [tstr (print_type t)]
     | Tfield _ -> failwith "not implemented field"
     | Tnil -> failwith "not implemented nil"
     | Tsubst _ -> failwith "not implemented subst"
@@ -80,14 +81,16 @@ let rec build_pp : Types.type_expr -> expression list -> expression =
 
 let transform_printer e args =
   let open Types in
-  begin match args with
+  let arg_count = List.length args in
+  let arg_exprs = args_to_exprs args in
+  begin match arg_exprs with
     | [] ->
       (* printers must be used in a higher-order context *)
       begin match e.exp_desc with
         | Texp_ident (_, _, { val_type = ty }) ->
 
           let printer =
-            tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty []] in
+            tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty None] in
           begin match ty.desc with
             | Tarrow (_, a, b, _) ->
               { e with exp_desc = printer.exp_desc }
@@ -97,15 +100,15 @@ let transform_printer e args =
         | _ -> assert false (* better error handling required *)
       end
 
-    | ["", Some ({ exp_type = ty } as _a), Required] ->
+    | [{ exp_type = ty } as arg] ->
       (* printers are called with a single argument *)
       let printer =
         tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
-                                                build_pp ty []] @ (args_to_exprs args)) in
+                                                build_pp ty (Some arg)] @ [arg]) in
       { e with exp_desc = printer.exp_desc }
     | _ ->
       (* better error handling required *)
-      failwith (Printf.sprintf "no function in the API has %d arguments" (List.length args))
+      failwith (Printf.sprintf "no function in the API has %d arguments" arg_count)
   end
 
 module TypedTransform : TypedtreeMap.MapArgument = struct
