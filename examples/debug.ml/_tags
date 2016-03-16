@@ -1,1 +1,2 @@
-true: package(str), annot, package(ppx_polyprint), polyprint_native, pp(cppo -D TRACE)
+true: package(str), annot, package(ppx_polyprint), pp(cppo -D TRACE)
+<src/*.{cmo,native,byte}>: polyprint_native

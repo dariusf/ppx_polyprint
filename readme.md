@@ -197,7 +197,7 @@ let () = dispatch (
 then add the tag `polyprint_native` or `polyprint_byte` to your source files.
 
 ```
-true: polyprint_native
+<*.{cmo,native,byte}>: polyprint_native
 ```
 
 If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_polyprint)/ppx_polyprint.native` manually to `ocamlfind`.
