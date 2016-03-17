@@ -129,12 +129,15 @@ module Untyped = struct
 
   let rec collect_params f =
     match f with
-    | { pexp_desc = Pexp_fun (_, _, {
-        ppat_desc = Ppat_var { txt = param; _ }; _ }, rest ) } ->
-      Param param :: collect_params rest
-    | { pexp_desc = Pexp_fun (_, _, {
-        ppat_desc = Ppat_construct ({txt = Lident "()"}, None); _ }, rest ) } ->
-      Unit :: collect_params rest
+    | { pexp_desc = Pexp_fun (_, _, { ppat_desc = desc; _ }, rest ) } ->
+      begin match desc with
+        | Ppat_var { txt = param; _ }
+        | Ppat_constraint ({ ppat_desc = Ppat_var { txt = param; _ } }, _) ->
+          Param param :: collect_params rest
+        | Ppat_construct ({txt = Lident "()"}, None) ->
+          Unit :: collect_params rest
+        | _ -> []
+      end
     | _ -> []
 
   let param_to_expr p =
