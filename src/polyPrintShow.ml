@@ -56,12 +56,8 @@ let rec build_pp : Types.type_expr -> expression option -> expression =
       begin match arg with
         | None -> qualified "pp_function"
         | Some a ->
-              tapp (qualified "pp_function_rep") [tstr (show_expr a)]
-          (* begin match a with *)
-            (* | { exp_desc = Texp_function _ } -> *)
-              (* tapp (qualified "pp_function_rep") [tstr (show_expr a)] *)
-            (* | _ -> tapp (qualified "pp_function_rep") [tstr (show_expr a)] *)
-          (* end *)
+          let repr = truncate 20 (show_expr a) ^ " : " ^ show_type ty in
+          tapp (qualified "pp_function_rep") [tstr repr]
       end
     | Ttuple tys ->
       let length = List.length tys in
@@ -79,7 +75,7 @@ let rec build_pp : Types.type_expr -> expression option -> expression =
           tapp (qualified "pp_tvar") [tstr ""]
       end
     | Tobject (t, _) ->
-      tapp (qualified "pp_misc") [tstr (print_type t)]
+      tapp (qualified "pp_misc") [tstr (show_type t)]
     | Tfield _ -> failwith "not implemented field"
     | Tnil -> failwith "not implemented nil"
     | Tsubst _ -> failwith "not implemented subst"

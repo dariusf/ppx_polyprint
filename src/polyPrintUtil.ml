@@ -59,6 +59,10 @@ let string_of_list pr xs =
 let replace needle haystack =
   Str.global_replace (Str.regexp needle) haystack
 
+let truncate n s =
+  if String.length s <= n then s
+  else String.sub s 0 n ^ "..."
+
 let dummy_loc = {
   Location.loc_start = Lexing.dummy_pos;
   Location.loc_end = Lexing.dummy_pos;
@@ -316,15 +320,18 @@ module Typed = struct
     in
     args |> List.map (fun (_, a, _) -> a) |> List.map remove_opt
 
-  let print_type ty =
+  let show_type ty =
     Printtyp.reset ();
     Printtyp.mark_loops ty;
     Format.asprintf "%a" Printtyp.type_expr ty
 
+  let print_type ty =
+    ty |> show_type |> print_endline
+
   let show_expr e = e
     |> Typpx.Untypeast.untype_expression
     |> Pprintast.string_of_expression
-    |> replace "[ ]+" " "
+    |> replace " +" " "
 
   let print_expr e =
     print_endline @@ show_expr e

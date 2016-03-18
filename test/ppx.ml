@@ -56,8 +56,8 @@ let simple = [
 ]
 
 let functions = [
-  "function literal", show (fun x -> x), "<function: fun x -> x>";
-  "function variable", (let y x = x in show y), "<function: y>";
+  "function literal", show (fun x -> x), "<function fun x -> x : 'a -> 'a>";
+  "function variable", (let y x = x in show y), "<function y : 'a -> 'a>";
 ]
 
 type ('a, 'b) either = Left of 'a | Right of 'b
@@ -114,7 +114,7 @@ struct
 end
 
 let qualified = [
-  "qualified abstract value", to_string Something.id, "<function: Something.id>";
+  "qualified abstract value", to_string Something.id, "<function Something.id : Something.t -> Something.t>";
   "qualified abstract value t defaults to show_t", to_string Something.thing, "1";
   "qualified parameterised abstract value", Something.(to_string (Cons (1, Cons (2, Nil)))), "[1; 2]";
   "qualified parameterised abstract value", Something.(to_string (Cons ("a", Cons ("b", Nil)))), "[a; b]";
