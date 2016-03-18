@@ -294,7 +294,8 @@ let call_wrapping_mapper =
         in
         Exp.apply
           (ident_dot (module_prefix @ [Names.call_n n]))
-          (("", Exp.tuple
+          (("", str fn_name) ::
+           ("", Exp.tuple
               [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
                Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
            ("", fn) :: args)

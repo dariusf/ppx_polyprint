@@ -158,7 +158,7 @@ module TestConfig = struct
   let run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
     incr count; last := 2; f a b
 
-  let call1 _ f a =
+  let call1 _ _ f a =
     called := true; f a
 end
 
@@ -171,7 +171,7 @@ module Otherwise = struct
     let reset () =
       called := false
 
-    let call1 _ f a =
+    let call1 _ _ f a =
       called := true; f a
   end
 end

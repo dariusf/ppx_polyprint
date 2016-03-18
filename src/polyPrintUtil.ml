@@ -152,7 +152,7 @@ module Untyped = struct
     match params with
     | [] -> body
     | p :: ps ->
-      let p' = 
+      let p' =
         match p with
         | Param x -> pat_var x
         | Unit -> pat_unit
@@ -169,11 +169,14 @@ module Untyped = struct
     | Lident name -> [name]
     | Ldot (a, b) -> longident_to_list a @ [b]
     | Lapply _ -> failwith "longident apply cannot be converted"
-    
+
   let item desc = {
     pstr_desc = desc;
     pstr_loc = dummy_loc;
   }
+
+  let print_structure e =
+    print_endline @@ Pprintast.string_of_expression e
 
   let print_expr e =
     print_endline @@ Pprintast.string_of_expression e
