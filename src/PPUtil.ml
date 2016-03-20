@@ -193,7 +193,12 @@ module Untyped = struct
               Pexp_apply
                 ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } }, args) }
           when fn_name = find ->
-            Exp.apply (Exp.ident { txt=Lident replace; loc }) args
+            Exp.apply ~loc (Exp.ident ~loc { txt = Lident replace; loc }) args
+        | { pexp_desc =
+              Pexp_apply
+                ({ pexp_desc = Pexp_ident { txt = Ldot (initial, fn_name); loc } }, args) }
+          when fn_name = find ->
+            Exp.apply ~loc (Exp.ident ~loc { txt = Ldot (initial, replace); loc }) args
         | _ -> default_mapper.expr mapper expr
     }
 
@@ -271,8 +276,8 @@ module Typed = struct
   let tident name =
     expr_from_desc @@ Texp_ident (
       pident name, {
-        txt=Lident name;
-        loc=dummy_loc
+        txt = Lident name;
+        loc = dummy_loc
       },
       dummy_value_desc)
 
