@@ -1,12 +1,9 @@
 
 open Config
-
-let rec fact n =
-  if n = 0 then 1 else n * fact (n - 1)
-  [@@tracerec]
+open Other
 
 let plus a b = a + b
-  [@@trace Adapter; a]
+  [@@trace a]
 
 let () =
   Arg.parse Debug.command_args (fun _ -> ()) "";

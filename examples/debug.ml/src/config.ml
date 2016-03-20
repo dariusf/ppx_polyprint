@@ -1,4 +1,5 @@
 
+[@@@polyprint Adapter]
 
 module Adapter : PolyPrint.TraceConfig = struct
   include PolyPrint.DefaultTraceConfig
