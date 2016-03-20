@@ -40,7 +40,37 @@ let app_mapper =
     ("nested", transform "a" "b" [%expr fun x -> a 1], [%expr fun x -> b 1]);
   ]
 
+let idempotence_of_serialisation =
+  let open Yojson.Basic in [
+    begin
+      let s = "{\"default\":[\"a\",\"module\"],\"functions\":{\"name\":[\"mod1\",\"mod2\"],\"name1\":[\"mod3\"]}}" in
+      PPEnv.init ();
+      PPEnv.from_json (from_string s);
+      let s2 = to_string @@ PPEnv.to_json () in
+      ("well-formed", s, s2)
+    end;
+
+    begin
+      let s = "{\"default\":[\"a\",\"module\"]}" in
+      PPEnv.init ();
+      PPEnv.from_json (from_string s);
+      let s2 = to_string @@ PPEnv.to_json () in
+      ("missing fields", s, s2)
+    end;
+
+    begin
+      let s = "{\"default\":\"a\"}" in
+      PPEnv.init ();
+      PPEnv.from_json (from_string s);
+      let s2 = to_string @@ PPEnv.to_json () in
+      PPEnv.init ();
+      let s3 = to_string @@ PPEnv.to_json () in
+      ("ill-formed", s3, s2)
+    end;
+  ]
+
 let tests = [
   test_set "eta-expansion" eta_expansion;
   test_set "app mapper" app_mapper;
+  test_set "idempotence of serialisation mapper" idempotence_of_serialisation;
 ]

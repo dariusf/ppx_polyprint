@@ -51,4 +51,7 @@ module Main = Typpx.Make.F(struct
     let lastUntypedTransformation = post_mapper
   end)
 
-let () = Main.run ()
+let () =
+  PPAcross.read ();
+  Main.run ();
+  PPAcross.write ();

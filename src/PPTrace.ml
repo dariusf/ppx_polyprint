@@ -21,7 +21,6 @@ let extract_binding_info config b =
   (* Collect info to add to the environment *)
   let open PPConfig in
   let open PPEnv in
-  push fn_name transformed_function_names;
   configuration_modules :=
     NameConfigMap.add fn_name config.module_prefix !configuration_modules;
 
@@ -158,10 +157,16 @@ let transform_str rec_flag transform mapper bindings =
 
 let check_for_annotation item =
   match item with
-  | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr [{
-      pstr_desc = Pstr_eval ({
-          pexp_desc = Pexp_construct ({ txt = path }, None)}, _) }]) } ->
-      PPEnv.specified_default_module := Some (longident_to_list path)
+  | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr str_inputs) } ->
+      PPEnv.init ();
+      let check item =
+        match item with
+        | { pstr_desc = Pstr_eval ({
+            pexp_desc = Pexp_construct ({ txt = path }, None)}, _) } ->
+            PPEnv.specified_default_module := Some (longident_to_list path)
+        | _ -> ()
+      in
+      List.iter check str_inputs;
   | _ -> ()
 
 (** A mapper that generates tracing boilerplate for annotated functions.
@@ -212,8 +217,8 @@ let call_wrapping_mapper =
       | { pexp_desc =
             Pexp_apply
               ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } } as fn, args) }
-        when List.mem fn_name !transformed_function_names ||
-             List.mem (Names.unself fn_name) !transformed_function_names ->
+        when List.mem fn_name (transformed_function_names ()) ||
+             List.mem (Names.unself fn_name) (transformed_function_names ()) ->
 
           let n = count_params fn_name args in
           let module_prefix =

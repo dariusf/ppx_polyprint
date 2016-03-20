@@ -161,7 +161,7 @@ let triple x y z = (x, y, z)
 As it is not on opam, the dependencies have to be installed manually.
 
 ```
-opam install ppx_tools typpx alcotest
+opam install ppx_tools typpx alcotest yojson
 
 # optional
 opam install ppx_deriving
