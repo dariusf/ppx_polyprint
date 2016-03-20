@@ -5,8 +5,8 @@ open Asttypes
 open Longident
 open Typedtree
 
-open PolyPrintUtil
-open PolyPrintUtil.Typed
+open Util
+open Util.Typed
 
 let constant_pp primitive =
   match primitive with

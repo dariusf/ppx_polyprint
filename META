@@ -1,4 +1,4 @@
 version = "0.0.0"
 description = "A polymorphic print function"
-archive(byte) = "polyPrint.cma"
-archive(native) = "polyPrint.cmxa"
+archive(byte) = "PolyPrint.cma"
+archive(native) = "PolyPrint.cmxa"

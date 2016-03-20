@@ -9,21 +9,21 @@ let pre_mapper =
     expr = begin
       fun mapper expr ->
         expr
-        |> PolyPrintTrace.annotation_mapper.expr
-          PolyPrintTrace.annotation_mapper
+        |> Trace.annotation_mapper.expr
+          Trace.annotation_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
-        |> PolyPrintShow.eta_expansion_mapper.expr
-          PolyPrintShow.eta_expansion_mapper
+        |> Show.eta_expansion_mapper.expr
+          Show.eta_expansion_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
     end;
     structure_item =
       fun mapper expr ->
         expr
-        |> PolyPrintTrace.annotation_mapper.structure_item
-          PolyPrintTrace.annotation_mapper
+        |> Trace.annotation_mapper.structure_item
+          Trace.annotation_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
-        |> PolyPrintShow.eta_expansion_mapper.structure_item
-          PolyPrintShow.eta_expansion_mapper
+        |> Show.eta_expansion_mapper.structure_item
+          Show.eta_expansion_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
   }
 
@@ -32,14 +32,14 @@ let post_mapper =
     expr = begin
       fun mapper expr ->
         expr
-        |> PolyPrintTrace.call_wrapping_mapper.expr
-          PolyPrintTrace.call_wrapping_mapper
+        |> Trace.call_wrapping_mapper.expr
+          Trace.call_wrapping_mapper
     end;
     structure_item =
       fun mapper expr ->
         expr
-        |> PolyPrintTrace.call_wrapping_mapper.structure_item
-          PolyPrintTrace.call_wrapping_mapper
+        |> Trace.call_wrapping_mapper.structure_item
+          Trace.call_wrapping_mapper
   }
 
 module Main = Typpx.Make.F(struct
@@ -47,7 +47,7 @@ module Main = Typpx.Make.F(struct
     let args = []
     let firstUntypedTransformation = pre_mapper
     module Typemod = Typpx.Default.Typemod
-    module TypedTransformation = TypedtreeMap.MakeMap(PolyPrintShow.TypedTransform)
+    module TypedTransformation = TypedtreeMap.MakeMap(Show.TypedTransform)
     let lastUntypedTransformation = post_mapper
   end)
 

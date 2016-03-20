@@ -5,8 +5,8 @@ open Asttypes
 open Longident
 open Parsetree
 
-open PolyPrintUtil
-open PolyPrintUtil.Untyped
+open Util
+open Util.Untyped
 
 module Environment = struct
   (** Information passed across traversals *)
@@ -73,7 +73,7 @@ module Config = struct
           List.fold_right interpret_one config_fields
             { default_config with module_prefix = default_module () }
         | _ -> { default_config with module_prefix = default_module () }
-      end 
+      end
 end
 
 let has_attr name attr =
