@@ -93,8 +93,8 @@ module Untyped = struct
     | [] -> failwith "empty dotted identifier"
     | [s] -> ident s
     | s :: ss ->
-      let res = List.fold_left (fun t c -> Ldot (t, c)) (Lident s) ss in
-      Exp.ident { txt = res; loc = dummy_loc }
+        let res = List.fold_left (fun t c -> Ldot (t, c)) (Lident s) ss in
+        Exp.ident { txt = res; loc = dummy_loc }
 
   let is_function_binding b =
     match b with
@@ -134,14 +134,14 @@ module Untyped = struct
   let rec collect_params f =
     match f with
     | { pexp_desc = Pexp_fun (_, _, { ppat_desc = desc; _ }, rest ) } ->
-      begin match desc with
+        begin match desc with
         | Ppat_var { txt = param; _ }
         | Ppat_constraint ({ ppat_desc = Ppat_var { txt = param; _ } }, _) ->
-          Param param :: collect_params rest
+            Param param :: collect_params rest
         | Ppat_construct ({txt = Lident "()"}, None) ->
-          Unit :: collect_params rest
+            Unit :: collect_params rest
         | _ -> []
-      end
+        end
     | _ -> []
 
   let param_to_expr p =
@@ -156,11 +156,11 @@ module Untyped = struct
     match params with
     | [] -> body
     | p :: ps ->
-      let p' =
-        match p with
-        | Param x -> pat_var x
-        | Unit -> pat_unit
-      in Exp.fun_ "" None p' (fun_with_params ps body)
+        let p' =
+          match p with
+          | Param x -> pat_var x
+          | Unit -> pat_unit
+        in Exp.fun_ "" None p' (fun_with_params ps body)
 
   (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
   let rec fun_wildcards n body =
@@ -193,7 +193,7 @@ module Untyped = struct
               Pexp_apply
                 ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } }, args) }
           when fn_name = find ->
-          Exp.apply (Exp.ident { txt=Lident replace; loc }) args
+            Exp.apply (Exp.ident { txt=Lident replace; loc }) args
         | _ -> default_mapper.expr mapper expr
     }
 
@@ -310,7 +310,7 @@ module Typed = struct
     match args with
     | [] -> exp
     | _ ->
-      expr_from_desc @@ Texp_apply (exp, dummy_args args)
+        expr_from_desc @@ Texp_apply (exp, dummy_args args)
 
   let args_to_exprs args =
     let remove_opt a =
@@ -328,8 +328,8 @@ module Typed = struct
   let print_type ty =
     ty |> show_type |> print_endline
 
-  let show_expr e = e
-    |> Typpx.Untypeast.untype_expression
+  let show_expr e =
+    Typpx.Untypeast.untype_expression e
     |> Pprintast.string_of_expression
     |> replace " +" " "
 

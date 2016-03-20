@@ -28,54 +28,54 @@ let rec build_pp : Types.type_expr -> expression option -> expression =
     let open Types in
     match ty.desc with
     | Tconstr (path_t, texprs, abbrev) ->
-      begin
-        let name =
-          let open Path in
-          match path_t with
-          | Pident { Ident.name; _ } ->
-            begin match name with
-              | ("int" | "string" | "bool" | "char" | "float" | "unit" |
-                 "exn" | "int32" | "int64" | "nativeint") as name ->
-                constant_pp name
-              | ("list" | "option" | "ref") ->
-                tapp (qualified ("pp_" ^ name))
+        begin
+          let name =
+            let open Path in
+            match path_t with
+            | Pident { Ident.name; _ } ->
+                begin match name with
+                | ("int" | "string" | "bool" | "char" | "float" | "unit" |
+                   "exn" | "int32" | "int64" | "nativeint") as name ->
+                    constant_pp name
+                | ("list" | "option" | "ref") ->
+                    tapp (qualified ("pp_" ^ name))
+                      (List.map (fun t -> build_pp t None) texprs)
+                | t ->
+                    tapp (tident ("pp_" ^ t))
+                      (List.map (fun t -> build_pp t None) texprs)
+                end
+            | Pdot (Pident { Ident.name = prefix; _ }, name, _) when prefix = "Pervasives"->
+                build_pp { ty with desc = Tconstr (pident name, texprs, abbrev) } arg
+            | Pdot (prefix, t, _) ->
+                tapp (tident_with_path prefix ("pp_" ^ t))
                   (List.map (fun t -> build_pp t None) texprs)
-              | t ->
-                tapp (tident ("pp_" ^ t))
-                  (List.map (fun t -> build_pp t None) texprs)
-            end
-          | Pdot (Pident { Ident.name = prefix; _ }, name, _) when prefix = "Pervasives"->
-            build_pp { ty with desc = Tconstr (pident name, texprs, abbrev) } arg
-          | Pdot (prefix, t, _) ->
-            tapp (tident_with_path prefix ("pp_" ^ t))
-              (List.map (fun t -> build_pp t None) texprs)
-          | _ -> failwith "Papply not yet implemented"
-        in name
-      end
+            | _ -> failwith "Papply not yet implemented"
+          in name
+        end
     | Tarrow _ ->
-      begin match arg with
+        begin match arg with
         | None -> qualified "pp_function"
         | Some a ->
-          let repr = truncate 20 (show_expr a) ^ " : " ^ show_type ty in
-          tapp (qualified "pp_function_rep") [tstr repr]
-      end
+            let repr = truncate 20 (show_expr a) ^ " : " ^ show_type ty in
+            tapp (qualified "pp_function_rep") [tstr repr]
+        end
     | Ttuple tys ->
-      let length = List.length tys in
-      assert (length >= 2 && length <= 7);
-      let suffix = if length = 2 then "" else string_of_int length in
-      let name = "pp_tuple" ^ suffix in
-      tapp (qualified name) (List.map (fun t -> build_pp t None) tys)
+        let length = List.length tys in
+        assert (length >= 2 && length <= 7);
+        let suffix = if length = 2 then "" else string_of_int length in
+        let name = "pp_tuple" ^ suffix in
+        tapp (qualified name) (List.map (fun t -> build_pp t None) tys)
     | Tlink t -> build_pp t arg
     | Tvar v -> (* what is v? monomorphic type from value restriction? *)
-      begin
-        match v with
-        | Some v ->
-          tapp (qualified "pp_tvar") [tstr v]
-        | None ->
-          tapp (qualified "pp_tvar") [tstr ""]
-      end
+        begin
+          match v with
+          | Some v ->
+              tapp (qualified "pp_tvar") [tstr v]
+          | None ->
+              tapp (qualified "pp_tvar") [tstr ""]
+        end
     | Tobject (t, _) ->
-      tapp (qualified "pp_misc") [tstr (show_type t)]
+        tapp (qualified "pp_misc") [tstr (show_type t)]
     | Tfield _ -> failwith "not implemented field"
     | Tnil -> failwith "not implemented nil"
     | Tsubst _ -> failwith "not implemented subst"
@@ -89,29 +89,29 @@ let transform_printer e args =
   let arg_count = List.length args in
   let arg_exprs = args_to_exprs args in
   begin match arg_exprs with
-    | [] ->
+  | [] ->
       (* printers must be used in a higher-order context *)
       begin match e.exp_desc with
-        | Texp_ident (_, _, { val_type = ty }) ->
+      | Texp_ident (_, _, { val_type = ty }) ->
 
           let printer =
             tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty None] in
           begin match ty.desc with
-            | Tarrow (_, a, b, _) ->
+          | Tarrow (_, a, b, _) ->
               { e with exp_desc = printer.exp_desc }
-            | _ -> assert false
+          | _ -> assert false
           end
 
-        | _ -> assert false (* better error handling required *)
+      | _ -> assert false (* better error handling required *)
       end
 
-    | [{ exp_type = ty } as arg] ->
+  | [{ exp_type = ty } as arg] ->
       (* printers are called with a single argument *)
       let printer =
         tapp (tident_ ["Format"; "asprintf"]) ([tstr "%a";
                                                 build_pp ty (Some arg)] @ [arg]) in
       { e with exp_desc = printer.exp_desc }
-    | _ ->
+  | _ ->
       (* better error handling required *)
       failwith (Printf.sprintf "no function in the API has %d arguments" arg_count)
   end
@@ -140,10 +140,10 @@ module TypedTransform : TypedtreeMap.MapArgument = struct
         ({exp_desc =
             Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn_name, _), _loc, _) }, args)
       when mod_name = Names.runtime ->
-      implementations fn_name e args
+        implementations fn_name e args
     | Texp_ident (Pdot (Pident {Ident.name = mod_name}, fn_name, _), _loc, _)
       when mod_name = Names.runtime ->
-      implementations fn_name e []
+        implementations fn_name e []
     | _ -> e
 
   let leave_expression e = e
@@ -174,25 +174,25 @@ let eta_expansion_mapper =
                  Pexp_ident ({ txt = Ldot (Lident mod_name, _) }) } as f, args)
           when mod_name = Names.runtime ->
 
-          { expr with
-            pexp_desc = Pexp_apply
-                (f, List.map (fun (l, a) -> l, mapper.expr mapper a) args) }
+            { expr with
+              pexp_desc = Pexp_apply
+                  (f, List.map (fun (l, a) -> l, mapper.expr mapper a) args) }
 
         | Pexp_ident ({ txt = Ldot (Lident mod_name, _) })
           when mod_name = Names.runtime ->
 
-          (* TODO try to replace pat_var and these patterns with metaquot *)
-          { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
+            (* TODO try to replace pat_var and these patterns with metaquot *)
+            { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
 
         | _ -> default_mapper.expr mapper expr
     end;
     structure_item = fun mapper item ->
       match item with
       | { pstr_desc = Pstr_value (rec_flag, bindings) } ->
-        (* Recurse into nested subexpressions *)
-        let new_bindings = List.map
-            (fun vb -> { vb with pvb_expr = mapper.expr mapper vb.pvb_expr })
-            bindings in
-        { item with pstr_desc = Pstr_value (rec_flag, new_bindings) }
+          (* Recurse into nested subexpressions *)
+          let new_bindings = List.map
+              (fun vb -> { vb with pvb_expr = mapper.expr mapper vb.pvb_expr })
+              bindings in
+          { item with pstr_desc = Pstr_value (rec_flag, new_bindings) }
       | s -> default_mapper.structure_item mapper s
   }

@@ -49,31 +49,31 @@ module Config = struct
   let rec interpret_one e config =
     match e with
     | { pexp_desc = Pexp_construct ({ txt = Lident name }, None) } ->
-      (* a module *)
-      { config with module_prefix = [name] }
+        (* a module *)
+        { config with module_prefix = [name] }
     | { pexp_desc = Pexp_construct ({ txt = path }, None) } ->
-      (* a qualified module *)
-      { config with module_prefix = longident_to_list path }
+        (* a qualified module *)
+        { config with module_prefix = longident_to_list path }
     | { pexp_desc = Pexp_tuple ts } ->
-      (* tuples are interchangeable with sequences for the most part,
-         but sequences may not be nested inside them *)
-      List.fold_right interpret_one ts config
+        (* tuples are interchangeable with sequences for the most part,
+           but sequences may not be nested inside them *)
+        List.fold_right interpret_one ts config
     | { pexp_desc = Pexp_ident { txt = Lident name } } ->
-      (* a variable name *)
-      { config with vars = name :: config.vars }
+        (* a variable name *)
+        { config with vars = name :: config.vars }
     | _ -> config
 
   let interpret attrs =
     match attrs with
     | [] -> { default_config with module_prefix = default_module () }
     | x :: _ -> (* TODO consider all, not just first *)
-      begin match x with
+        begin match x with
         | _, PStr [{pstr_desc = Pstr_eval (seq, _)}] ->
-          let config_fields = list_of_sequence seq in
-          List.fold_right interpret_one config_fields
-            { default_config with module_prefix = default_module () }
+            let config_fields = list_of_sequence seq in
+            List.fold_right interpret_one config_fields
+              { default_config with module_prefix = default_module () }
         | _ -> { default_config with module_prefix = default_module () }
-      end
+        end
 end
 
 let has_attr name attr =
@@ -107,11 +107,11 @@ let filter_params names params =
   match names with
   | [] -> params
   | _ ->
-    let p = function
-      | Unit -> true
-      | Param p -> List.mem p names
-    in
-    List.filter p params
+      let p = function
+        | Unit -> true
+        | Param p -> List.mem p names
+      in
+      List.filter p params
 
 let run_invocation fn_name params config fn =
   let open Config in
@@ -192,12 +192,12 @@ let interesting_expr_binding rec_flag attrs binding =
   let has_attribute =
     match rec_flag with
     | Nonrecursive ->
-      if any (has_attr "tracerec") attrs then
-        Errors.tracerec_used_on_nonrecursive_binding ()
-      else
-        any (has_attr "trace") attrs
+        if any (has_attr "tracerec") attrs then
+          Errors.tracerec_used_on_nonrecursive_binding ()
+        else
+          any (has_attr "trace") attrs
     | Recursive ->
-      any (has_attr "trace") attrs || any (has_attr "tracerec") attrs
+        any (has_attr "trace") attrs || any (has_attr "tracerec") attrs
   in has_attribute && is_function_binding binding
 
 let interesting_str_binding rec_flag binding =
@@ -242,30 +242,30 @@ let annotation_mapper =
         fun mapper expr ->
           match expr with
           | { pexp_desc = Pexp_let (rec_flag, bindings, body) } ->
-            begin
-              match rec_flag with
-              | Recursive ->
-                transform_expr Recursive
-                  transform_recursive_binding expr mapper bindings body
-              | Nonrecursive ->
-                transform_expr Nonrecursive
-                  transform_nonrecursive_binding expr mapper bindings body
-            end
+              begin
+                match rec_flag with
+                | Recursive ->
+                    transform_expr Recursive
+                      transform_recursive_binding expr mapper bindings body
+                | Nonrecursive ->
+                    transform_expr Nonrecursive
+                      transform_nonrecursive_binding expr mapper bindings body
+              end
           | x -> default_mapper.expr mapper x;
       end;
     structure_item = fun mapper item ->
       check_for_annotation item;
       match item with
       | { pstr_desc = Pstr_value (rec_flag, bindings) } ->
-        begin
-          match rec_flag with
-          | Recursive ->
-            transform_str Recursive
-              transform_recursive_binding mapper bindings
-          | Nonrecursive ->
-            transform_str Nonrecursive
-              transform_nonrecursive_binding mapper bindings
-        end
+          begin
+            match rec_flag with
+            | Recursive ->
+                transform_str Recursive
+                  transform_recursive_binding mapper bindings
+            | Nonrecursive ->
+                transform_str Nonrecursive
+                  transform_nonrecursive_binding mapper bindings
+          end
       | s -> default_mapper.structure_item mapper s
   }
 
@@ -283,22 +283,22 @@ let call_wrapping_mapper =
         when List.mem fn_name !transformed_function_names ||
              List.mem (Names.unself fn_name) !transformed_function_names ->
 
-        let n = count_params fn_name args in
-        let module_prefix =
-          try
-            NameConfigMap.find fn_name !configuration_modules
-          with Not_found ->
-          try
-            NameConfigMap.find (Names.unself fn_name) !configuration_modules
-          with Not_found -> default_module ()
-        in
-        Exp.apply
-          (ident_dot (module_prefix @ [Names.call_n n]))
-          (("", str fn_name) ::
-           ("", Exp.tuple
-              [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
-               Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
-           ("", fn) :: args)
+          let n = count_params fn_name args in
+          let module_prefix =
+            try
+              NameConfigMap.find fn_name !configuration_modules
+            with Not_found ->
+            try
+              NameConfigMap.find (Names.unself fn_name) !configuration_modules
+            with Not_found -> default_module ()
+          in
+          Exp.apply
+            (ident_dot (module_prefix @ [Names.call_n n]))
+            (("", str fn_name) ::
+             ("", Exp.tuple
+                [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
+                 Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
+             ("", fn) :: args)
 
       | _ -> default_mapper.expr mapper expr
   }
