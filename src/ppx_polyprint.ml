@@ -28,18 +28,15 @@ let pre_mapper =
   }
 
 let post_mapper =
+  let open PPEnv in
   { default_mapper with
     expr = begin
       fun mapper expr ->
-        expr
-        |> PPTrace.call_wrapping_mapper.expr
-          PPTrace.call_wrapping_mapper
+        expr |> PPTrace.wrap_calls_expr (transformed_function_names ())
     end;
     structure_item =
       fun mapper expr ->
-        expr
-        |> PPTrace.call_wrapping_mapper.structure_item
-          PPTrace.call_wrapping_mapper
+        expr |> PPTrace.wrap_calls_str (transformed_function_names ())
   }
 
 module Main = Typpx.Make.F(struct

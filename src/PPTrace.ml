@@ -208,35 +208,50 @@ let annotation_mapper =
 
 (** A mapper that wraps call sites of annotated functions based on the
     environment computed so far *)
-let call_wrapping_mapper =
+let call_wrapping_mapper annotated_functions =
   { default_mapper with
     expr = fun mapper expr ->
       let open PPConfig in
       let open PPEnv in
+      let is_relevant fn_name =
+        let t = annotated_functions in
+        List.mem fn_name t ||
+        List.mem (Names.unself fn_name) t
+      in
+      let transform fn_name fn args loc =
+        let n = count_params fn_name args in
+        let module_prefix =
+          try
+            NameConfigMap.find fn_name !configuration_modules
+          with Not_found ->
+          try
+            NameConfigMap.find (Names.unself fn_name) !configuration_modules
+          with Not_found -> default_module ()
+        in
+        Exp.apply
+          (ident_dot (module_prefix @ [Names.call_n n]))
+          (("", str fn_name) ::
+           ("", Exp.tuple
+              [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
+               Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
+           ("", fn) :: args)
+      in
       match expr with
       | { pexp_desc =
             Pexp_apply
               ({ pexp_desc = Pexp_ident { txt = Lident fn_name; loc } } as fn, args) }
-        when List.mem fn_name (transformed_function_names ()) ||
-             List.mem (Names.unself fn_name) (transformed_function_names ()) ->
-
-          let n = count_params fn_name args in
-          let module_prefix =
-            try
-              NameConfigMap.find fn_name !configuration_modules
-            with Not_found ->
-            try
-              NameConfigMap.find (Names.unself fn_name) !configuration_modules
-            with Not_found -> default_module ()
-          in
-          Exp.apply
-            (ident_dot (module_prefix @ [Names.call_n n]))
-            (("", str fn_name) ::
-             ("", Exp.tuple
-                [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
-                 Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
-             ("", fn) :: args)
-
+      | { pexp_desc =
+            Pexp_apply
+              ({ pexp_desc = Pexp_ident { txt = Ldot (_, fn_name); loc } } as fn, args) }
+        when is_relevant fn_name ->
+          transform fn_name fn args loc
       | _ -> default_mapper.expr mapper expr
   }
 
+let wrap_calls_expr annotated_functions =
+  let mapper = call_wrapping_mapper annotated_functions in
+  mapper.expr mapper
+
+let wrap_calls_str annotated_functions =
+  let mapper = call_wrapping_mapper annotated_functions in
+  mapper.structure_item mapper
