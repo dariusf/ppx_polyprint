@@ -5,76 +5,8 @@ open Asttypes
 open Longident
 open Parsetree
 
-open Util
-open Util.Untyped
-
-module Environment = struct
-  (** Information passed across traversals *)
-
-  (** Names of annotated functions that were successfully transformed.Built up
-      during AST traversal. Stateful, and thus mappers here are not reentrant. *)
-  let transformed_function_names = ref ([] : string list)
-
-  (** Configuration module path provided for each function name *)
-  module NameConfigMap = Map.Make(String)
-  let configuration_modules = ref NameConfigMap.empty
-
-  (** The default module to use if not explicitly given *)
-  let specified_default_module = ref (None : string list option)
-end
-
-module Config = struct
-
-  type t = {
-    module_prefix : string list;
-    vars : (string) list
-  }
-
-  let rec list_of_sequence seq =
-    match seq with
-    | { pexp_desc = Pexp_sequence (e, f) } -> e :: list_of_sequence f
-    | _ -> [seq]
-
-  let default_config = {
-    module_prefix = [Names.runtime; Names.default_module];
-    vars = [];
-  }
-
-  (** Indirection for getting the default module in the face of stateful
-      configuration variables. Should be removed when this extension can be
-      parameterised by it *)
-  let default_module () =
-    otherwise default_config.module_prefix !Environment.specified_default_module
-
-  let rec interpret_one e config =
-    match e with
-    | { pexp_desc = Pexp_construct ({ txt = Lident name }, None) } ->
-        (* a module *)
-        { config with module_prefix = [name] }
-    | { pexp_desc = Pexp_construct ({ txt = path }, None) } ->
-        (* a qualified module *)
-        { config with module_prefix = longident_to_list path }
-    | { pexp_desc = Pexp_tuple ts } ->
-        (* tuples are interchangeable with sequences for the most part,
-           but sequences may not be nested inside them *)
-        List.fold_right interpret_one ts config
-    | { pexp_desc = Pexp_ident { txt = Lident name } } ->
-        (* a variable name *)
-        { config with vars = name :: config.vars }
-    | _ -> config
-
-  let interpret attrs =
-    match attrs with
-    | [] -> { default_config with module_prefix = default_module () }
-    | x :: _ -> (* TODO consider all, not just first *)
-        begin match x with
-        | _, PStr [{pstr_desc = Pstr_eval (seq, _)}] ->
-            let config_fields = list_of_sequence seq in
-            List.fold_right interpret_one config_fields
-              { default_config with module_prefix = default_module () }
-        | _ -> { default_config with module_prefix = default_module () }
-        end
-end
+open PPUtil
+open PPUtil.Untyped
 
 let has_attr name attr =
   match attr with
@@ -87,8 +19,8 @@ let extract_binding_info config b =
   let params = collect_params original_rhs in
 
   (* Collect info to add to the environment *)
-  let open Config in
-  let open Environment in
+  let open PPConfig in
+  let open PPEnv in
   push fn_name transformed_function_names;
   configuration_modules :=
     NameConfigMap.add fn_name config.module_prefix !configuration_modules;
@@ -114,7 +46,7 @@ let filter_params names params =
       List.filter p params
 
 let run_invocation fn_name params config fn =
-  let open Config in
+  let open PPConfig in
   let filtered_params = filter_params config.vars params in
   let filtered_param_count = List.length filtered_params in
   let run_fn_name = ident_dot
@@ -137,7 +69,7 @@ let run_invocation fn_name params config fn =
   invocation
 
 let transform_binding_recursively config b =
-  let open Config in
+  let open PPConfig in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   ignore (count_params fn_name params);
   let nonrec_body =
@@ -158,7 +90,7 @@ let transform_binding_recursively config b =
   { b with pvb_expr = new_rhs }
 
 let transform_binding_nonrecursively config b =
-  let open Config in
+  let open PPConfig in
   let (original_rhs, fn_name, params) = extract_binding_info config b in
   ignore (count_params fn_name params);
   let new_rhs =
@@ -178,14 +110,14 @@ let transform_binding_nonrecursively config b =
   { b with pvb_expr = new_rhs' }
 
 let transform_recursive_binding attrs b =
-  let config = Config.interpret attrs in
+  let config = PPConfig.interpret attrs in
   if any (has_attr "tracerec") attrs then
     transform_binding_recursively config b
   else
     transform_binding_nonrecursively config b
 
 let transform_nonrecursive_binding attrs b =
-  let config = Config.interpret attrs in
+  let config = PPConfig.interpret attrs in
   transform_binding_nonrecursively config b
 
 let interesting_expr_binding rec_flag attrs binding =
@@ -229,7 +161,7 @@ let check_for_annotation item =
   | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr [{
       pstr_desc = Pstr_eval ({
           pexp_desc = Pexp_construct ({ txt = path }, None)}, _) }]) } ->
-      Environment.specified_default_module := Some (longident_to_list path)
+      PPEnv.specified_default_module := Some (longident_to_list path)
   | _ -> ()
 
 (** A mapper that generates tracing boilerplate for annotated functions.
@@ -274,8 +206,8 @@ let annotation_mapper =
 let call_wrapping_mapper =
   { default_mapper with
     expr = fun mapper expr ->
-      let open Config in
-      let open Environment in
+      let open PPConfig in
+      let open PPEnv in
       match expr with
       | { pexp_desc =
             Pexp_apply

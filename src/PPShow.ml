@@ -5,8 +5,8 @@ open Asttypes
 open Longident
 open Typedtree
 
-open Util
-open Util.Typed
+open PPUtil
+open PPUtil.Typed
 
 let constant_pp primitive =
   match primitive with

@@ -1,11 +1,11 @@
 
 open Test_util
 open Ast_mapper
-open PolyPrintUtil
-open PolyPrintUtil.Untyped
+open PPUtil
+open PPUtil.Untyped
 
 let eta_expansion =
-  let open PolyPrintShow in
+  let open PPShow in
   let eta_expand e =
     eta_expansion_mapper.expr eta_expansion_mapper e
   in

@@ -23,8 +23,8 @@ runtime:
 	$(OCB) $(LIB).cmxa
 
 ppx:
-	$(OCB) main.native
-	cp main.native _build/src/$(PACKAGE)
+	$(OCB) $(PACKAGE).native
+	cp $(PACKAGE).native _build/src/$(PACKAGE)
 
 test: all
 	rm -rf _build/test/
