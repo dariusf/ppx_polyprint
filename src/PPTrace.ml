@@ -158,7 +158,6 @@ let transform_str rec_flag transform mapper bindings =
 let check_for_annotation item =
   match item with
   | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr str_inputs) } ->
-      PPEnv.init ();
       let check item =
         match item with
         | { pstr_desc = Pstr_eval ({
