@@ -136,7 +136,7 @@ let higher_order =
     "string", showp PolyPrint.to_string "aaa", "aaa";
     "aliases 1", showp PolyPrint.string_of "aaa", "aaa";
     "aliases 2", showp PolyPrint.show "aaa", "aaa";
-    "unqualified", showp to_string 1, "<function>";
+    "unqualified", showp to_string 1, "'a";
   ]
 
 module TestConfig = struct

@@ -93,11 +93,10 @@ let transform_printer e args =
       (* printers must be used in a higher-order context *)
       begin match e.exp_desc with
       | Texp_ident (_, _, { val_type = ty }) ->
-
-          let printer =
-            tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp ty None] in
           begin match ty.desc with
           | Tarrow (_, a, b, _) ->
+              let printer =
+                tapp (tident_ ["Format"; "asprintf"]) [tstr "%a"; build_pp a None] in
               { e with exp_desc = printer.exp_desc }
           | _ -> assert false
           end
