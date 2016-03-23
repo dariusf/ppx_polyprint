@@ -136,7 +136,10 @@ let higher_order =
     "string", showp PolyPrint.to_string "aaa", "aaa";
     "aliases 1", showp PolyPrint.string_of "aaa", "aaa";
     "aliases 2", showp PolyPrint.show "aaa", "aaa";
+    (* only qualified names are eta abstracted *)
     "unqualified", showp to_string 1, "'_a";
+    (* no support for this currently *)
+    "constrained", showp (to_string : int -> string) 1, "'_a";
   ]
 
 module TestConfig = struct
