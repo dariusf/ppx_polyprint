@@ -234,7 +234,7 @@ module Printers = struct
   let pp_tvar name fmt _ =
     match name with
     | "" -> fprintf fmt "<polymorphic>"
-    | v -> fprintf fmt "'%s" v
+    | v -> fprintf fmt "'_%s" v
 
   let pp_option pp fmt x =
     match x with

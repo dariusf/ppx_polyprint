@@ -66,7 +66,7 @@ let rec build_pp : Types.type_expr -> expression option -> expression =
         let name = "pp_tuple" ^ suffix in
         tapp (qualified name) (List.map (fun t -> build_pp t None) tys)
     | Tlink t -> build_pp t arg
-    | Tvar v -> (* what is v? monomorphic type from value restriction? *)
+    | Tvar v -> (* v is a monomorphic type variable *)
         begin
           match v with
           | Some v ->
