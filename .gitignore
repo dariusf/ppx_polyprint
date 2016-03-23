@@ -4,3 +4,5 @@ _tests/
 *.byte
 *.out
 *.docdir
+*.log
+
