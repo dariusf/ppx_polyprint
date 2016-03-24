@@ -133,9 +133,7 @@ end
 module DefaultTraceConfig : TraceConfig = struct
   open Printf
 
-  (* TODO add an implementation that tracks recursion depth *)
   (* TODO demo stubbing these out *)
-  (* TODO make this use debug.ml *)
 
   let sep () = " | "
   let fn name = name ^ " <-"

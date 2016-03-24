@@ -1,0 +1,2 @@
+true: package(str), annot, package(ppx_polyprint)
+<src/*.{cmo,native,byte}>: polyprint_native
