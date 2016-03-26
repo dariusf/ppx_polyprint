@@ -8,24 +8,22 @@ open Parsetree
 open PPUtil
 open PPUtil.Untyped
 
-let has_attr name attr =
-  match attr with
-  | { txt = n }, _ when n = name -> true
-  | _ -> false
-
+(** Given a binding, pulls out the relevant fields.
+    Also collects information to add to the environment. *)
 let extract_binding_info config b =
   let { pvb_pat = original_lhs; pvb_expr = original_rhs } = b in
   let fn_name = get_fn_name original_lhs in
   let params = collect_params original_rhs in
 
-  (* Collect info to add to the environment *)
-  let open PPConfig in
+  (* Collect information *)
   let open PPEnv in
   configuration_modules :=
-    NameConfigMap.add fn_name config.module_prefix !configuration_modules;
+    NameConfigMap.add fn_name config.PPConfig.module_prefix !configuration_modules;
 
   (original_rhs, fn_name, params)
 
+(** Ensures that there are not too many parameters. Warns if
+    that is the case. *)
 let count_params fn_name params =
   let actual = List.length params in
   let clamped = clamp 0 7 actual in
@@ -34,77 +32,77 @@ let count_params fn_name params =
 
 (** We only take parameters within the list, but if it is empty,
     we don't filter at all. *)
-let filter_params names params =
-  match names with
+let filter_params interesting params =
+  match interesting with
   | [] -> params
   | _ ->
       let p = function
         | Unit -> true
-        | Param p -> List.mem p names
+        | Param p -> List.mem p interesting
       in
       List.filter p params
 
-let run_invocation fn_name params config fn =
-  let open PPConfig in
-  let filtered_params = filter_params config.vars params in
+(** Generates the invocation which actually runs the function being traced. *)
+let run_invocation ~loc fn_name params config fn =
+  let filtered_params = filter_params config.PPConfig.vars params in
   let filtered_param_count = List.length filtered_params in
-  let run_fn_name = ident_dot
-      (config.module_prefix @ [Names.run_n filtered_param_count]) in
+  let run_fn_name = ident_dot ~loc
+      (config.PPConfig.module_prefix @ [Names.run_n filtered_param_count]) in
   let final_fn =
-    if filtered_param_count = List.length params then fn
+    if filtered_param_count = List.length params
+    then fn
     else
-      fun_wildcards filtered_param_count (app fn (List.map param_to_expr params))
-  in
-  let invocation = app run_fn_name (List.concat [
-      [str fn_name];
-      List.map (fun p -> Exp.tuple [
-          str (show_param p);
+      fun_wildcards ~loc
+        filtered_param_count
+        (app ~loc fn (List.map (param_to_expr ~loc) params)) in
+  let invocation = app ~loc run_fn_name (List.concat [
+      [str ~loc fn_name];
+      List.map (fun p -> Exp.tuple ~loc [
+          str ~loc (show_param p);
           [%expr PolyPrint.show];
-          param_to_expr p
+          param_to_expr ~loc p
         ]) filtered_params;
       [[%expr PolyPrint.show]];
-      [final_fn]])
+      [final_fn]]) [@metaloc loc]
   in
   invocation
 
 let transform_binding_recursively config b =
-  let open PPConfig in
-  let (original_rhs, fn_name, params) = extract_binding_info config b in
+  let original_rhs, fn_name, params = extract_binding_info config b in
   ignore (count_params fn_name params);
-  let nonrec_body =
+  let nonrec_body, loc =
     let nonrec_params = Param (Names.self fn_name) :: params in
-    let body = get_fn_body original_rhs in
+    let body, loc = get_fn_body original_rhs in
     let mapper = app_mapper fn_name (Names.self fn_name) in
     let new_body = mapper.expr mapper body in
-    fun_with_params nonrec_params new_body
+    fun_with_params ~loc nonrec_params new_body, loc
   in
-  let new_rhs = fun_with_params params [%expr
+  let new_rhs = fun_with_params ~loc params [%expr
       let [%p pat_var (Names.mangle fn_name)] = [%e nonrec_body] in
       let rec aux =
-        [%e fun_with_params params
-              (run_invocation fn_name params config
-                 (app (ident (Names.mangle fn_name)) [ident "aux"]));
-        ] in [%e app_variables "aux" params]
-    ] in
+        [%e fun_with_params ~loc params
+              (run_invocation ~loc fn_name params config
+                 (app ~loc (ident (Names.mangle fn_name)) [ident "aux"]));
+        ] in [%e app_variables ~loc "aux" params]
+    ] [@metaloc loc] in
   { b with pvb_expr = new_rhs }
 
 let transform_binding_nonrecursively config b =
-  let open PPConfig in
-  let (original_rhs, fn_name, params) = extract_binding_info config b in
+  let original_rhs, fn_name, params = extract_binding_info config b in
   ignore (count_params fn_name params);
-  let new_rhs =
-    let body = get_fn_body original_rhs in
+  let new_rhs, loc =
+    let body, loc = get_fn_body original_rhs in
     let mapper = app_mapper fn_name (Names.mangle fn_name) in
     let new_body = mapper.expr mapper body in
-    fun_with_params params new_body
+    fun_with_params ~loc params new_body, loc
   in
   (* let rec is used here when transforming recursive functions.
      Non-recursive functions wouldn't have recursive references,
      so this is safe. *)
-  let new_rhs' = fun_with_params params [%expr
+  let new_rhs' = fun_with_params ~loc params [%expr
       let rec [%p pat_var (Names.mangle fn_name)] = [%e new_rhs] in
-      [%e run_invocation fn_name params config
-            (ident (Names.mangle fn_name))]]
+      [%e run_invocation ~loc fn_name params config
+            (ident (Names.mangle fn_name))]] [@metaloc loc]
   in
   { b with pvb_expr = new_rhs' }
 
@@ -210,8 +208,6 @@ let annotation_mapper =
 let call_wrapping_mapper annotated_functions =
   { default_mapper with
     expr = fun mapper expr ->
-      let open PPConfig in
-      let open PPEnv in
       let is_relevant fn_name =
         let t = annotated_functions in
         List.mem fn_name t ||
@@ -220,20 +216,20 @@ let call_wrapping_mapper annotated_functions =
       let transform fn_name fn args loc =
         let n = count_params fn_name args in
         let module_prefix =
+          let open PPEnv in
           try
             NameConfigMap.find fn_name !configuration_modules
           with Not_found ->
           try
             NameConfigMap.find (Names.unself fn_name) !configuration_modules
-          with Not_found -> default_module ()
+          with Not_found -> PPConfig.default_module ()
         in
-        Exp.apply
+        Exp.apply ~loc
           (ident_dot (module_prefix @ [Names.call_n n]))
-          (("", str fn_name) ::
-           ("", Exp.tuple
-              [Exp.ident ~loc { txt = Lident "__FILE__"; loc = loc };
-               Exp.ident ~loc { txt = Lident "__LINE__"; loc = loc }]) ::
-           ("", fn) :: args)
+          (([str fn_name; Exp.tuple ~loc [
+               Exp.ident ~loc { txt = Lident "__FILE__"; loc };
+               Exp.ident ~loc { txt = Lident "__LINE__"; loc }]; fn]
+            |> List.map (fun a -> "", a)) @ args)
       in
       match expr with
       | { pexp_desc =

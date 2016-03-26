@@ -74,37 +74,48 @@ module Untyped = struct
   open Ast_helper
   open Parsetree
 
-  let get_fn_name pat =
-    match pat with
-    | { ppat_desc = Ppat_var { txt = fn_name }; _ } -> fn_name
-    | _ -> failwith "not a function pattern"
+  let show_structure = Pprintast.string_of_structure
 
-  let app f args =
-    Exp.apply f (List.map (fun a -> "", a) args)
+  let print_structure e =
+    show_structure e |> print_endline
 
-  let ident s =
-    Exp.ident { txt = Lident s; loc = dummy_loc }
+  let show_expr = Pprintast.string_of_expression
 
-  let str s =
-    Exp.constant (Const_string (s, None))
+  let print_expr e =
+    show_expr e |> print_endline
 
-  let ident_dot ss =
+  let app ?(loc=dummy_loc) f args =
+    Exp.apply ~loc f (List.map (fun a -> "", a) args)
+
+  let ident ?(loc=dummy_loc) s =
+    Exp.ident ~loc { txt = Lident s; loc }
+
+  let str ?(loc=dummy_loc) s =
+    Exp.constant ~loc (Const_string (s, None))
+
+  let ident_dot ?(loc=dummy_loc) ss =
     match ss with
     | [] -> failwith "empty dotted identifier"
     | [s] -> ident s
     | s :: ss ->
         let res = List.fold_left (fun t c -> Ldot (t, c)) (Lident s) ss in
-        Exp.ident { txt = res; loc = dummy_loc }
+        Exp.ident ~loc { txt = res; loc }
 
   let is_function_binding b =
     match b with
     | { pvb_expr = { pexp_desc = Pexp_fun _ } } -> true
     | _ -> false
 
-  let rec get_fn_body pexp =
+  let get_fn_name pat =
+    match pat with
+    | { ppat_desc = Ppat_var { txt = fn_name }; _ } -> fn_name
+    | _ -> failwith "not a function pattern"
+
+  (** Recurses down a curried lambda to get the body *)
+  let rec get_fn_body ?(loc=dummy_loc) pexp =
     match pexp with
-    | { pexp_desc = Pexp_fun (_, _, _, b) } -> get_fn_body b
-    | _ -> pexp
+    | { pexp_desc = Pexp_fun (_, _, _, b); pexp_loc } -> get_fn_body ~loc:pexp_loc b
+    | _ -> pexp, loc
 
   let pat_any = {
     ppat_desc = Ppat_any;
@@ -144,15 +155,15 @@ module Untyped = struct
         end
     | _ -> []
 
-  let param_to_expr p =
+  let param_to_expr ?(loc=dummy_loc) p =
     match p with
-    | Unit -> Exp.construct ({ txt = Lident "()"; loc = dummy_loc }) None
-    | Param name -> Exp.ident { txt = Lident name; loc = dummy_loc }
+    | Unit -> Exp.construct ~loc ({ txt = Lident "()"; loc }) None
+    | Param name -> Exp.ident ~loc { txt = Lident name; loc }
 
-  let app_variables f args =
-    Exp.apply (ident f) (List.map (fun a -> "", param_to_expr a) args)
+  let app_variables ?(loc=dummy_loc) f args =
+    Exp.apply ~loc (ident f) (List.map (fun a -> "", param_to_expr ~loc a) args)
 
-  let rec fun_with_params params body =
+  let rec fun_with_params ?(loc=dummy_loc) params body =
     match params with
     | [] -> body
     | p :: ps ->
@@ -160,13 +171,13 @@ module Untyped = struct
           match p with
           | Param x -> pat_var x
           | Unit -> pat_unit
-        in Exp.fun_ "" None p' (fun_with_params ps body)
+        in Exp.fun_ ~loc "" None p' (fun_with_params ~loc ps body)
 
   (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
-  let rec fun_wildcards n body =
+  let rec fun_wildcards ?(loc=dummy_loc) n body =
     match n with
     | 0 -> body
-    | _ -> Exp.fun_ "" None pat_any (fun_wildcards (n - 1) body)
+    | _ -> Exp.fun_ ~loc "" None pat_any (fun_wildcards ~loc (n - 1) body)
 
   let rec longident_to_list li =
     match li with
@@ -178,12 +189,6 @@ module Untyped = struct
     pstr_desc = desc;
     pstr_loc = dummy_loc;
   }
-
-  let print_structure e =
-    print_endline @@ Pprintast.string_of_expression e
-
-  let print_expr e =
-    print_endline @@ Pprintast.string_of_expression e
 
   let app_mapper find replace =
     { default_mapper with
@@ -201,6 +206,11 @@ module Untyped = struct
             Exp.apply ~loc (Exp.ident ~loc { txt = Ldot (initial, replace); loc }) args
         | _ -> default_mapper.expr mapper expr
     }
+
+  let has_attr name attr =
+    match attr with
+    | { txt = n }, _ when n = name -> true
+    | _ -> false
 
 end
 
