@@ -39,7 +39,7 @@ let post_mapper =
         expr |> PPTrace.wrap_calls_str (transformed_function_names ())
   }
 
-module Main = Typpx.Make.F(struct
+module Main = PPDriver.Make.F(struct
     let tool_name = "ppx_polyprint"
     let args = []
     let firstUntypedTransformation = pre_mapper
