@@ -6,9 +6,12 @@ module Recursive : PolyPrint.TraceConfig = struct
 
   let depth = ref 0
 
-  let rec spaces = function
-    | 0 -> ""
-    | n -> "  " ^ spaces (n - 1)
+  let spaces n =
+    let rec aux bar n =
+      match n with
+      | 0 -> ""
+      | n -> (if bar then "| " else " ") ^ aux (not bar) (n - 1)
+    in aux true n
 
   let incr_depth () =
     spaces !depth |> print_string;
