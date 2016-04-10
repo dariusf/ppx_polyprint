@@ -43,8 +43,7 @@ module Compile = struct
       ignore (Includemod.signatures initial_env sg sg);
       Typecore.force_delayed_checks ();
       Warnings.check_fatal ();
-      let tsg = TypedTransformation.map_signature tsg in
-      Typpx.Untypeast.untype_signature tsg
+      tsg
 
     (* Compile a .ml file *)
 
@@ -74,8 +73,7 @@ module Compile = struct
         end else begin
           Stypes.dump (Some (outputprefix ^ ".annot"));
         end;
-        let typedtree = TypedTransformation.map_structure typedtree in
-        Typpx.Untypeast.untype_structure typedtree
+        typedtree
       with x ->
         Stypes.dump (Some (outputprefix ^ ".annot"));
         raise x
@@ -149,6 +147,8 @@ module Make = struct
             firstUntypedTransformation.structure firstUntypedTransformation str
             |> dump_str !dump_first
             |> Compile.implementation Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
+            |> TypedTransformation.map_structure
+            |> Typpx.Untypeast.untype_structure
             |> dump_str !dump_untype
             |> Embed.mapper.structure Embed.mapper
             |> lastUntypedTransformation.structure lastUntypedTransformation
@@ -161,6 +161,8 @@ module Make = struct
             firstUntypedTransformation.signature firstUntypedTransformation sg
             |> dump_sig !dump_first
             |> Compile.interface Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
+            |> TypedTransformation.map_signature
+            |> Typpx.Untypeast.untype_signature
             |> dump_sig !dump_untype
             |> Embed.mapper.signature Embed.mapper
             |> lastUntypedTransformation.signature lastUntypedTransformation
