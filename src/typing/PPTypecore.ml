@@ -1900,8 +1900,9 @@ and type_expect_ ?in_function env sexp ty_expected =
                 match path_t with
                 | Pident { Ident.name; _ } -> Some name, texprs
                 | Pdot (Pident { Ident.name = prefix; _ }, name, _)
-                  when prefix = "Pervasives"->
+                  when prefix = "Pervasives" ->
                     Some name, texprs
+                    (* TODO check that it comes from polyprint *)
                 | Pdot (prefix, t, _) -> (* TODO *)
                     Some t, texprs
                 | _ -> failwith "Papply not yet implemented"
@@ -1910,9 +1911,11 @@ and type_expect_ ?in_function env sexp ty_expected =
         | _ -> None, []
       in
       let sfunct, funct = match x with
-        | Some name when name = "traced" ->
+        | Some name when PPUtil.Names.is_traced_type name ->
             (* TODO use arity *)
-            let new_funct = PPUtil.Untyped.app (PPUtil.Untyped.ident "wrap1") [sfunct] in
+            let arity = PPUtil.Names.traced_arity name in
+            let new_funct = PPUtil.Untyped.app
+                (PPUtil.Untyped.ident (PPUtil.Names.wrap_n arity)) [sfunct] in
             let funct = type_exp env new_funct in
             new_funct, funct
         | _ -> sfunct, funct

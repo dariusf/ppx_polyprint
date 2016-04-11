@@ -109,7 +109,7 @@ module Make = struct
 
     open A
 
-    module Compile = Compile.Make(Typemod)(TypedTransformation)
+    module Typecheck = Compile.Make(Typemod)(TypedTransformation)
 
     let dump_first = ref None
     let dump_untype = ref None
@@ -146,7 +146,7 @@ module Make = struct
             Warnings.parse_options true  "a"; (* warning as error *)
             firstUntypedTransformation.structure firstUntypedTransformation str
             |> dump_str !dump_first
-            |> Compile.implementation Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
+            |> Typecheck.implementation Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
             |> TypedTransformation.map_structure
             |> Typpx.Untypeast.untype_structure
             |> dump_str !dump_untype
@@ -160,7 +160,7 @@ module Make = struct
             Warnings.parse_options true  "a"; (* warning as error *)
             firstUntypedTransformation.signature firstUntypedTransformation sg
             |> dump_sig !dump_first
-            |> Compile.interface Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
+            |> Typecheck.interface Format.err_formatter "papa" (* dummy *) "gaga" (* dummy *)
             |> TypedTransformation.map_signature
             |> Typpx.Untypeast.untype_signature
             |> dump_sig !dump_untype

@@ -326,61 +326,19 @@ module Printers = struct
 
 end
 
-type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) traced
-  = Traced1 of ('a -> 'b)
-  | Traced2 of ('a -> 'b -> 'c)
-  | Traced3 of ('a -> 'b -> 'c -> 'd)
-  | Traced4 of ('a -> 'b -> 'c -> 'd -> 'e)
-  | Traced5 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f)
-  | Traced6 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
-  | Traced7 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
+type ('a, 'b) traced1 = Traced1 of ('a -> 'b)
+type ('a, 'b, 'c) traced2 = Traced2 of ('a -> 'b -> 'c)
+type ('a, 'b, 'c, 'd) traced3 = Traced3 of ('a -> 'b -> 'c -> 'd)
+type ('a, 'b, 'c, 'd, 'e) traced4 = Traced4 of ('a -> 'b -> 'c -> 'd -> 'e)
+type ('a, 'b, 'c, 'd, 'e, 'f) traced5 = Traced5 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f)
+type ('a, 'b, 'c, 'd, 'e, 'f, 'g) traced6 = Traced6 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
+type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) traced7 = Traced7 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
 
-let wrap1 gf a =
-  let fn =
-    match gf with
-    | Traced1 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a
-
-let wrap2 gf a b =
-  let fn =
-    match gf with
-    | Traced2 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b
-
-let wrap3 gf a b c =
-  let fn =
-    match gf with
-    | Traced3 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b c
-
-let wrap4 gf a b c d =
-  let fn =
-    match gf with
-    | Traced4 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b c d
-
-let wrap5 gf a b c d e =
-  let fn =
-    match gf with
-    | Traced5 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b c d e
-
-let wrap6 gf a b c d e f =
-  let fn =
-    match gf with
-    | Traced6 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b c d e f
-
-let wrap7 gf a b c d e f g =
-  let fn =
-    match gf with
-    | Traced7 f -> f
-    | _ -> failwith "wrong arity!"
-  in fn a b c d e f g
+let wrap1 (Traced1 fn) a = fn a
+let wrap2 (Traced2 fn) a b = fn a b
+let wrap3 (Traced3 fn) a b c = fn a b c
+let wrap4 (Traced4 fn) a b c d = fn a b c d
+let wrap5 (Traced5 fn) a b c d e = fn a b c d e
+let wrap6 (Traced6 fn) a b c d e f = fn a b c d e f
+let wrap7 (Traced7 fn) a b c d e f g = fn a b c d e f g
 

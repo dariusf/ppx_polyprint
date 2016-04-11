@@ -4,6 +4,9 @@ open Asttypes
 open Longident
 
 module Names = struct
+  open Printf
+  open Str
+      
   let runtime = "PolyPrint"
   let printers = "Printers"
   let default_module = "DefaultTraceConfig"
@@ -13,6 +16,19 @@ module Names = struct
   let run_n n = "run" ^ string_of_int n
   let call_n n = "call" ^ string_of_int n
   let traced_n n = "Traced" ^ string_of_int n
+  let traced_type_n n = "traced" ^ string_of_int n
+  let traced_arity name =
+    try
+      ignore @@ search_forward (regexp "traced\\([0-7]\\)") name 0;
+      matched_group 1 name |> int_of_string
+    with Not_found ->
+      failwith @@ sprintf "%s is not a valid name for a traced function type" name
+  let is_traced_type name =
+    try
+      ignore @@ traced_arity name; true
+    with Not_found -> false
+
+  let wrap_n n = "wrap" ^ string_of_int n
   let mangle fn_name = fn_name ^ "_original"
   let self name = name ^ "_self"
   let unself name =
@@ -60,9 +76,24 @@ let string_of_list pr xs =
 let replace needle haystack =
   Str.global_replace (Str.regexp needle) haystack
 
+let starts_with prefix s =
+  try
+    ignore (Str.search_forward (Str.regexp prefix) s 0);
+    true
+  with Not_found -> false
+
 let truncate n s =
   if String.length s <= n then s
   else String.sub s 0 n ^ "..."
+
+let tap msg action x =
+  print_string @@ msg ^ ": ";
+  action x;
+  x
+
+let taps msg x =
+  print_endline @@ msg ^ ": ";
+  x
 
 let dummy_loc = {
   Location.loc_start = Lexing.dummy_pos;
@@ -351,6 +382,13 @@ module Typed = struct
 
   let print_expr e =
     print_endline @@ show_expr e
+
+  let show_structure e =
+    Typpx.Untypeast.untype_structure e
+    |> Untyped.show_structure
+
+  let print_structure s =
+    print_endline @@ show_structure s
 
 end
 
