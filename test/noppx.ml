@@ -41,49 +41,7 @@ let app_mapper =
     ("qualified", transform "a" "b" [%expr fun x -> A.a 1], [%expr fun x -> A.b 1]);
   ]
 
-let call_wrapping_mapper =
-  let t = Pprintast.string_of_expression in
-  List.map (fun (n, a, b) -> n, t a, t b) [
-    ("app",
-     PPTrace.wrap_calls_expr ["a"] [%expr a 1],
-     [%expr PolyPrint.DefaultTraceConfig.call1 "a" (__FILE__, __LINE__) a 1]);
-    ("qualified",
-     PPTrace.wrap_calls_expr ["a"] [%expr A.a 1],
-     [%expr PolyPrint.DefaultTraceConfig.call1 "a" (__FILE__, __LINE__) A.a 1]);
-  ]
-
-let idempotence_of_serialisation =
-  let open Yojson.Basic in [
-    begin
-      let s = "{\"default\":[\"a\",\"module\"],\"functions\":{\"name\":[\"mod1\",\"mod2\"],\"name1\":[\"mod3\"]}}" in
-      PPEnv.init ();
-      PPEnv.from_json (from_string s);
-      let s2 = to_string @@ PPEnv.to_json () in
-      ("well-formed", s, s2)
-    end;
-
-    begin
-      let s = "{\"default\":[\"a\",\"module\"]}" in
-      PPEnv.init ();
-      PPEnv.from_json (from_string s);
-      let s2 = to_string @@ PPEnv.to_json () in
-      ("missing fields", s, s2)
-    end;
-
-    begin
-      let s = "{\"default\":\"a\"}" in
-      PPEnv.init ();
-      PPEnv.from_json (from_string s);
-      let s2 = to_string @@ PPEnv.to_json () in
-      PPEnv.init ();
-      let s3 = to_string @@ PPEnv.to_json () in
-      ("ill-formed", s3, s2)
-    end;
-  ]
-
 let tests = [
   test_set "eta-expansion" eta_expansion;
   test_set "app mapper" app_mapper;
-  test_set "call wrapping mapper" call_wrapping_mapper;
-  test_set "idempotence of serialisation mapper" idempotence_of_serialisation;
 ]

@@ -275,22 +275,6 @@ let tracing =
      ignore (var_filtering2 1 2 3 4);
      let c = !last = 2 in
      a && b && c);
-
-    ("call wrapping",
-     let [@trace TestConfig] rather_unique x = x in
-     reset ();
-     let a = not !called in
-     ignore @@ rather_unique 1;
-     let b = !called in
-     a && b);
-
-    ("default annotation",
-     let [@trace] id x = x in
-     Otherwise.Default.reset ();
-     let a = not !Otherwise.Default.called in
-     ignore @@ id 1;
-     let b = !Otherwise.Default.called in
-     a && b);
   ]
 
 let tests = [
