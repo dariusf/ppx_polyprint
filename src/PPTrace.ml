@@ -67,9 +67,13 @@ let run_invocation ~loc fn_name params config fn =
   in
   invocation
 
+let traced_fn ~loc arity f =
+  let name = Names.traced_n arity in
+  Exp.construct ~loc ({ txt = Lident name; loc }) (Some f)
+
 let transform_binding_recursively config b =
   let original_rhs, fn_name, params = extract_binding_info config b in
-  ignore (count_params fn_name params);
+  let arity = count_params fn_name params in
   let nonrec_body, loc =
     let nonrec_params = Param (Names.self fn_name) :: params in
     let body, loc = get_fn_body original_rhs in
@@ -77,7 +81,7 @@ let transform_binding_recursively config b =
     let new_body = mapper.expr mapper body in
     fun_with_params ~loc nonrec_params new_body, loc
   in
-  let new_rhs = fun_with_params ~loc params [%expr
+  let new_rhs = traced_fn ~loc arity @@ fun_with_params ~loc params [%expr
       let [%p pat_var (Names.mangle fn_name)] = [%e nonrec_body] in
       let rec aux =
         [%e fun_with_params ~loc params
@@ -89,7 +93,7 @@ let transform_binding_recursively config b =
 
 let transform_binding_nonrecursively config b =
   let original_rhs, fn_name, params = extract_binding_info config b in
-  ignore (count_params fn_name params);
+  let arity = count_params fn_name params in
   let new_rhs, loc =
     let body, loc = get_fn_body original_rhs in
     let mapper = app_mapper fn_name (Names.mangle fn_name) in
@@ -99,7 +103,7 @@ let transform_binding_nonrecursively config b =
   (* let rec is used here when transforming recursive functions.
      Non-recursive functions wouldn't have recursive references,
      so this is safe. *)
-  let new_rhs' = fun_with_params ~loc params [%expr
+  let new_rhs' = traced_fn ~loc arity @@ fun_with_params ~loc params [%expr
       let rec [%p pat_var (Names.mangle fn_name)] = [%e new_rhs] in
       [%e run_invocation ~loc fn_name params config
             (ident (Names.mangle fn_name))]] [@metaloc loc]

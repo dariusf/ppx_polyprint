@@ -12,6 +12,7 @@ module Names = struct
   let debug = "debug"
   let run_n n = "run" ^ string_of_int n
   let call_n n = "call" ^ string_of_int n
+  let traced_n n = "Traced" ^ string_of_int n
   let mangle fn_name = fn_name ^ "_original"
   let self name = name ^ "_self"
   let unself name =
