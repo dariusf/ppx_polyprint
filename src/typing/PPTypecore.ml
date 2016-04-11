@@ -1891,6 +1891,33 @@ and type_expect_ ?in_function env sexp ty_expected =
       begin_def (); (* one more level for non-returning functions *)
       if !Clflags.principal then begin_def ();
       let funct = type_exp env sfunct in
+
+      let x, texprs = match funct.exp_type.desc with
+        | Tconstr (path_t, texprs, abbrev) ->
+            begin
+              let name =
+                let open Path in
+                match path_t with
+                | Pident { Ident.name; _ } -> Some name, texprs
+                | Pdot (Pident { Ident.name = prefix; _ }, name, _)
+                  when prefix = "Pervasives"->
+                    Some name, texprs
+                | Pdot (prefix, t, _) -> (* TODO *)
+                    Some t, texprs
+                | _ -> failwith "Papply not yet implemented"
+              in name
+            end
+        | _ -> None, []
+      in
+      let sfunct, funct = match x with
+        | Some name when name = "traced" ->
+            (* TODO use arity *)
+            let new_funct = PPUtil.Untyped.app (PPUtil.Untyped.ident "wrap1") [sfunct] in
+            let funct = type_exp env new_funct in
+            new_funct, funct
+        | _ -> sfunct, funct
+      in
+
       if !Clflags.principal then begin
           end_def ();
           generalize_structure funct.exp_type

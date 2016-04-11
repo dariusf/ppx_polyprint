@@ -18,6 +18,9 @@ open Parsetree
 open Types
 open Format
 
+module Typecore = PPTypecore
+module Typeclass = PPTypeclass
+
 type error =
     Cannot_apply of module_type
   | Not_included of Includemod.error list

@@ -10,7 +10,7 @@ INSTALL = META \
 	_build/src/$(LIB).cmxa \
 	_build/src/$(LIB).a
 
-OCB_FLAGS = -use-ocamlfind -I src -I test
+OCB_FLAGS = -use-ocamlfind
 
 OCB = ocamlbuild $(OCB_FLAGS)
 

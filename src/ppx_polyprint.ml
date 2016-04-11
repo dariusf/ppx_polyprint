@@ -43,7 +43,7 @@ module Main = PPDriver.Make.F(struct
     let tool_name = "ppx_polyprint"
     let args = []
     let firstUntypedTransformation = pre_mapper
-    module Typemod = Typpx.Default.Typemod
+    module Typemod = PPTypemod
     module TypedTransformation = TypedtreeMap.MakeMap(PPShow.TypedTransform)
     let lastUntypedTransformation = post_mapper
   end)

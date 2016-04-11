@@ -325,3 +325,62 @@ module Printers = struct
   (*   sprintf "(%s, %s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) (pr_g g) *)
 
 end
+
+type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) traced
+  = Traced1 of ('a -> 'b)
+  | Traced2 of ('a -> 'b -> 'c)
+  | Traced3 of ('a -> 'b -> 'c -> 'd)
+  | Traced4 of ('a -> 'b -> 'c -> 'd -> 'e)
+  | Traced5 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f)
+  | Traced6 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
+  | Traced7 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
+
+let wrap1 gf a =
+  let fn =
+    match gf with
+    | Traced1 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a
+
+let wrap2 gf a b =
+  let fn =
+    match gf with
+    | Traced2 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b
+
+let wrap3 gf a b c =
+  let fn =
+    match gf with
+    | Traced3 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b c
+
+let wrap4 gf a b c d =
+  let fn =
+    match gf with
+    | Traced4 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b c d
+
+let wrap5 gf a b c d e =
+  let fn =
+    match gf with
+    | Traced5 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b c d e
+
+let wrap6 gf a b c d e f =
+  let fn =
+    match gf with
+    | Traced6 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b c d e f
+
+let wrap7 gf a b c d e f g =
+  let fn =
+    match gf with
+    | Traced7 f -> f
+    | _ -> failwith "wrong arity!"
+  in fn a b c d e f g
+

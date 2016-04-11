@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+module Typecore = PPTypecore
+
 open Parsetree
 open Asttypes
 open Path
