@@ -149,11 +149,13 @@ module TestConfig = struct
   let last = ref 0
 
   let called = ref false
+  let two_called = ref false
 
   let reset () =
     count := 0;
     last := 0;
-    called := false
+    called := false;
+    two_called := false
 
   let run1 fn_name (a_n, pr_a, a) pr_res f =
     incr count; last := 1; f a
@@ -163,6 +165,9 @@ module TestConfig = struct
 
   let call1 _ f a =
     called := true; f a
+
+  let call2 _ f a b =
+    two_called := true; f a b
 end
 
 module Otherwise = struct
@@ -190,15 +195,20 @@ let rec fact_str_rec n =
   if n = 0 then 1 else n * fact_str_rec (n - 1)
   [@@tracerec TestConfig]
 
-(* These will fail, but can't really be tested... *)
+(* These should fail, but can't really be tested... *)
 
 (* let plus_str_rec a b = a + b *)
 (* [@@tracerec TestConfig] *)
 
-(* let () = *)
 (* let [@tracerec TestConfig] plus_expr_rec a b = a + b in () *)
 
-(* has to be here for now, or the test fails *)
+(* This is a copy of the existing unary wrapper type *)
+(* type ('a, 'b) traced1 = Traced1 of ('a -> 'b) *)
+
+(* This should fail with a type error only if the above line is not commented out *)
+(* let id = Traced1 (fun x -> x) in id 2 *)
+
+(* Has to be here for now, or the test fails *)
 [@@@polyprint Otherwise.Default]
 
 let tracing =
@@ -274,6 +284,34 @@ let tracing =
      let b = !last = 1 in
      ignore (var_filtering2 1 2 3 4);
      let c = !last = 2 in
+     a && b && c);
+    
+    ("default annotation",
+     let [@trace] id x = x in
+     Otherwise.Default.reset ();
+     let a = not !Otherwise.Default.called in
+     ignore @@ id 1;
+     let b = !Otherwise.Default.called in
+     a && b);
+
+    ("call wrapping basic",
+     let [@trace TestConfig] rather_unique x = x in
+     reset ();
+     let a = not !called in
+     ignore @@ rather_unique 1 [@polyprint TestConfig];
+     let b = !called in
+     a && b);
+
+    ("call wrapping partial application",
+     let [@trace TestConfig] binary_fn x y = x + y in
+     reset ();
+     let a = not !two_called in
+     let partial = binary_fn 1 [@polyprint TestConfig] in
+     let b = not !two_called && not !called in
+     ignore @@ partial 2;
+     (* call2 is invoked here, only when application is fully *)
+     (* saturated, and with the saturated arity *)
+     let c = !two_called && not !called in
      a && b && c);
   ]
 
