@@ -1915,7 +1915,8 @@ and type_expect_ ?in_function env sexp ty_expected =
             (* TODO use arity *)
             let arity = PPUtil.Names.traced_arity name in
             let new_funct = PPUtil.Untyped.app
-                (PPUtil.Untyped.ident (PPUtil.Names.wrap_n arity)) [sfunct] in
+                (PPUtil.Untyped.qualified_ident
+                   [PPUtil.Names.runtime; PPUtil.Names.wrap_n arity]) [sfunct] in
             let funct = type_exp env new_funct in
             new_funct, funct
         | _ -> sfunct, funct

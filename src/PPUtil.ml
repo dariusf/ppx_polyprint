@@ -125,7 +125,7 @@ module Untyped = struct
   let str ?(loc=dummy_loc) s =
     Exp.constant ~loc (Const_string (s, None))
 
-  let ident_dot ?(loc=dummy_loc) ss =
+  let qualified_ident ?(loc=dummy_loc) ss =
     match ss with
     | [] -> failwith "empty dotted identifier"
     | [s] -> ident s
