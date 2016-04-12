@@ -9,6 +9,7 @@ module Names = struct
       
   let runtime = "PolyPrint"
   let printers = "Printers"
+  let default_annotation = "polyprint"
   let default_module = "DefaultTraceConfig"
   let default_module_sig = "TraceConfig"
   let to_string = ["to_string"; "string_of"; "show"]
@@ -113,6 +114,12 @@ let to_longident p =
     | [x] -> Lident x
     | x :: xs -> Ldot (aux xs, x)
   in aux (List.rev p)
+
+let rec longident_to_list li =
+  match li with
+  | Lident name -> [name]
+  | Ldot (a, b) -> longident_to_list a @ [b]
+  | Lapply _ -> failwith "longident apply cannot be converted"
 
 module Untyped = struct
 
@@ -246,12 +253,6 @@ module Untyped = struct
       Exp.ident ~loc { txt = Lident "__FILE__"; loc };
       Exp.ident ~loc { txt = Lident "__LINE__"; loc }
     ]
-
-  let rec longident_to_list li =
-    match li with
-    | Lident name -> [name]
-    | Ldot (a, b) -> longident_to_list a @ [b]
-    | Lapply _ -> failwith "longident apply cannot be converted"
 
   let item desc = {
     pstr_desc = desc;

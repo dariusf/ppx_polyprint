@@ -159,11 +159,13 @@ let transform_str rec_flag transform mapper bindings =
 
 let check_for_annotation item =
   match item with
-  | { pstr_desc = Pstr_attribute ({ txt = "polyprint" }, PStr str_inputs) } ->
+  | { pstr_desc = Pstr_attribute ({ txt = name }, PStr str_inputs) }
+    when name = Names.default_annotation ->
       let check item =
         match item with
         | { pstr_desc = Pstr_eval ({
             pexp_desc = Pexp_construct ({ txt = path }, None)}, _) } ->
+            (* TODO if there are multiple specified, which does this use? *)
             PPEnv.specified_default_module := Some (longident_to_list path)
         | _ -> ()
       in

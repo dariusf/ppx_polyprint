@@ -1893,7 +1893,7 @@ and type_expect_ ?in_function env sexp ty_expected =
       let funct = type_exp env sfunct in
 
       let sfunct, funct = PPCoerce.coerce sfunct funct
-          (List.length sargs) (type_exp env) in
+          (List.length sargs) sexp.pexp_attributes (type_exp env) in
 
       if !Clflags.principal then begin
           end_def ();

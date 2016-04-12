@@ -7,10 +7,32 @@ open PPUtil
 let too_many_args fn =
   failwith @@ Printf.sprintf "too many args given to %s!" (Untyped.show_expr fn)
 
+let interpret (attrs : Parsetree.attributes) =
+  let open Parsetree in
+  let open Asttypes in
+  match attrs with
+  | [] -> None
+  | ({ txt = name }, Parsetree.PStr str) :: _ ->
+      if name <> Names.default_annotation then None
+      else
+        let check item =
+          match item with
+          | { pstr_desc = Pstr_eval ({
+              pexp_desc = Pexp_construct ({ txt = path }, None)}, _) } ->
+              [longident_to_list path]
+          | _ -> []
+        in
+        begin
+          match List.map check str |> List.concat with
+          | x :: _ -> Some x (* TODO consider all, not just first *)
+          | _ -> None
+        end
+  | _ -> None
+
 (** Coerces a traced function into a regular function.
     TODO this is difficult to test, given the reliance on the type-checker closure.*)
-let coerce untyped typed arg_count check =
-  let constructor, texprs =
+let coerce untyped typed arg_count attrs check =
+  let constructor, _texprs =
     match typed.exp_type.desc with
     | Tconstr (path_t, texprs, abbrev) ->
         begin
@@ -37,18 +59,23 @@ let coerce untyped typed arg_count check =
           too_many_args untyped
         else
           let loc = typed.exp_loc in
+          let attr_name = interpret attrs in
+          let config_module =
+            match attr_name with
+            | Some name -> name
+            | _ -> otherwise
+                     [Names.runtime; Names.default_module]
+                     !PPEnv.specified_default_module in 
           let wrapped =
             Untyped.app ~loc
               (Untyped.qualified_ident ~loc
                  [Names.runtime; Names.wrap_n arity])
               [Untyped.location loc;
                Untyped.pack
-                 (otherwise
-                    [Names.runtime; Names.default_module]
-                    !PPEnv.specified_default_module)
+                 config_module
                  [Names.runtime; Names.default_module_sig];
-               untyped]
-          in
+               untyped] in
+
           if arity = arg_count then
             (* id 1 2 3 ==> (wrap id) 1 2 3 *)
             wrapped
