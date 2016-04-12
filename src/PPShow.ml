@@ -161,8 +161,8 @@ let app f args =
 let ident s =
   Exp.ident { txt = Lident s; loc = dummy_loc }
 
-(** Eta-expand uses of library functions in identifier position only *)
-let eta_expansion_mapper =
+(** Eta-abstraction uses of library functions in identifier position only *)
+let eta_abstraction_mapper =
   let open Parsetree in
   { default_mapper with
     expr = begin
@@ -181,6 +181,7 @@ let eta_expansion_mapper =
           when mod_name = Names.runtime ->
 
             (* TODO try to replace pat_var and these patterns with metaquot *)
+            (* TODO factor this out and replace with eta_abstract *)
             { expr with pexp_desc = Pexp_fun ("", None, pat_var "x", app expr [ident "x"]) }
 
         | _ -> default_mapper.expr mapper expr

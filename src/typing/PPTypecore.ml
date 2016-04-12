@@ -1892,7 +1892,8 @@ and type_expect_ ?in_function env sexp ty_expected =
       if !Clflags.principal then begin_def ();
       let funct = type_exp env sfunct in
 
-      let sfunct, funct = PPCoerce.coerce sfunct funct (type_exp env) in
+      let sfunct, funct = PPCoerce.coerce sfunct funct
+          (List.length sargs) (type_exp env) in
 
       if !Clflags.principal then begin
           end_def ();

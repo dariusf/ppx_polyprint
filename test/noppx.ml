@@ -4,10 +4,10 @@ open Ast_mapper
 open PPUtil
 open PPUtil.Untyped
 
-let eta_expansion =
+let eta_abstraction =
   let open PPShow in
   let eta_expand e =
-    eta_expansion_mapper.expr eta_expansion_mapper e
+    eta_abstraction_mapper.expr eta_abstraction_mapper e
   in
   let t = Pprintast.string_of_expression in
   List.map (fun (n, a, b) -> n, t a, t b) [
@@ -42,6 +42,6 @@ let app_mapper =
   ]
 
 let tests = [
-  test_set "eta-expansion" eta_expansion;
+  test_set "eta-abstraction" eta_abstraction;
   test_set "app mapper" app_mapper;
 ]

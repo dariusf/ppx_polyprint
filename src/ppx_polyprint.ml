@@ -12,8 +12,8 @@ let pre_mapper =
         |> PPTrace.annotation_mapper.expr
           PPTrace.annotation_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
-        |> PPShow.eta_expansion_mapper.expr
-          PPShow.eta_expansion_mapper
+        |> PPShow.eta_abstraction_mapper.expr
+          PPShow.eta_abstraction_mapper
           (* |> (fun e -> print_endline @@ Pprintast.string_of_expression e; e) *)
     end;
     structure_item =
@@ -22,8 +22,8 @@ let pre_mapper =
         |> PPTrace.annotation_mapper.structure_item
           PPTrace.annotation_mapper
         (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
-        |> PPShow.eta_expansion_mapper.structure_item
-          PPShow.eta_expansion_mapper
+        |> PPShow.eta_abstraction_mapper.structure_item
+          PPShow.eta_abstraction_mapper
           (* |> (fun e -> print_endline @@ Pprintast.string_of_structure [e]; e) *)
   }
 

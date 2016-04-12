@@ -60,6 +60,10 @@ let clear xs =
 let clamp l h x =
   max l (min h x)
 
+let rec range l u =
+  if l = u then []
+  else l :: range (l + 1) u
+
 let otherwise default e =
   match e with
   | None -> default
@@ -192,8 +196,11 @@ module Untyped = struct
     | Unit -> Exp.construct ~loc ({ txt = Lident "()"; loc }) None
     | Param name -> Exp.ident ~loc { txt = Lident name; loc }
 
+  let param_to_arg ?(loc=dummy_loc) p =
+    "", param_to_expr ~loc p
+
   let app_variables ?(loc=dummy_loc) f args =
-    Exp.apply ~loc (ident f) (List.map (fun a -> "", param_to_expr ~loc a) args)
+    Exp.apply ~loc (ident f) (List.map param_to_arg args)
 
   let rec fun_with_params ?(loc=dummy_loc) params body =
     match params with
@@ -204,6 +211,12 @@ module Untyped = struct
           | Param x -> pat_var x
           | Unit -> pat_unit
         in Exp.fun_ ~loc "" None p' (fun_with_params ~loc ps body)
+
+  let rec eta_abstract ?(loc=dummy_loc) n exp =
+    let make_param s = Param ("_" ^ string_of_int s) in
+    let params = range 0 n |> List.map make_param in
+    fun_with_params ~loc params
+      (Exp.apply ~loc exp (List.rev params |> List.map param_to_arg))
 
   (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
   let rec fun_wildcards ?(loc=dummy_loc) n body =
