@@ -121,13 +121,13 @@ module type TraceConfig = sig
     'g param_spec ->
     'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
 
-  val call1 : fn_name -> loc -> ('a -> 'b) -> 'a -> 'b
-  val call2 : fn_name -> loc -> ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
-  val call3 : fn_name -> loc -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd
-  val call4 : fn_name -> loc -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e
-  val call5 : fn_name -> loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f
-  val call6 : fn_name -> loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g
-  val call7 : fn_name -> loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
+  val call1 : loc -> ('a -> 'b) -> 'a -> 'b
+  val call2 : loc -> ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
+  val call3 : loc -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd
+  val call4 : loc -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e
+  val call5 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f
+  val call6 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g
+  val call7 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
 end
 
 module DefaultTraceConfig : TraceConfig = struct
@@ -205,13 +205,13 @@ module DefaultTraceConfig : TraceConfig = struct
     print_result fn_name pr_res res;
     res
 
-  let call1 _ _ fn a = fn a
-  let call2 _ _ fn a b = fn a b
-  let call3 _ _ fn a b c = fn a b c
-  let call4 _ _ fn a b c d = fn a b c d
-  let call5 _ _ fn a b c d e = fn a b c d e
-  let call6 _ _ fn a b c d e f = fn a b c d e f
-  let call7 _ _ fn a b c d e f g = fn a b c d e f g
+  let call1 _ fn a = fn a
+  let call2 _ fn a b = fn a b
+  let call3 _ fn a b c = fn a b c
+  let call4 _ fn a b c d = fn a b c d
+  let call5 _ fn a b c d e = fn a b c d e
+  let call6 _ fn a b c d e f = fn a b c d e f
+  let call7 _ fn a b c d e f g = fn a b c d e f g
 end
 
 module Printers = struct
@@ -334,11 +334,10 @@ type ('a, 'b, 'c, 'd, 'e, 'f) traced5 = Traced5 of ('a -> 'b -> 'c -> 'd -> 'e -
 type ('a, 'b, 'c, 'd, 'e, 'f, 'g) traced6 = Traced6 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
 type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) traced7 = Traced7 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
 
-let wrap1 (Traced1 fn) a = fn a
-let wrap2 (Traced2 fn) a b = fn a b
-let wrap3 (Traced3 fn) a b c = fn a b c
-let wrap4 (Traced4 fn) a b c d = fn a b c d
-let wrap5 (Traced5 fn) a b c d e = fn a b c d e
-let wrap6 (Traced6 fn) a b c d e f = fn a b c d e f
-let wrap7 (Traced7 fn) a b c d e f g = fn a b c d e f g
-
+let wrap1 loc (module TC : TraceConfig) (Traced1 fn) a = TC.call1 loc fn a
+let wrap2 loc (module TC : TraceConfig) (Traced2 fn) a b = TC.call2 loc fn a b
+let wrap3 loc (module TC : TraceConfig) (Traced3 fn) a b c = TC.call3 loc fn a b c
+let wrap4 loc (module TC : TraceConfig) (Traced4 fn) a b c d = TC.call4 loc fn a b c d
+let wrap5 loc (module TC : TraceConfig) (Traced5 fn) a b c d e = TC.call5 loc fn a b c d e
+let wrap6 loc (module TC : TraceConfig) (Traced6 fn) a b c d e f = TC.call6 loc fn a b c d e f
+let wrap7 loc (module TC : TraceConfig) (Traced7 fn) a b c d e f g = TC.call7 loc fn a b c d e f g

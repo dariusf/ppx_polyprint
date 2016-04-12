@@ -36,17 +36,25 @@ let coerce untyped typed arg_count check =
         if arity < arg_count then
           too_many_args untyped
         else
+          let loc = typed.exp_loc in
           let wrapped =
-          Untyped.app
-            (Untyped.qualified_ident
-               [Names.runtime; Names.wrap_n arity]) [untyped]
-            in
-        if arity = arg_count then
-          (* id 1 2 3 ==> (wrap id) 1 2 3 *)
-          wrapped
-        else
-          (* id 1 2 ==> (fun a b c -> (wrap id) a b c) 1 2 *)
-          Untyped.eta_abstract (arity - arg_count) wrapped
+            Untyped.app ~loc
+              (Untyped.qualified_ident ~loc
+                 [Names.runtime; Names.wrap_n arity])
+              [Untyped.location loc;
+               Untyped.pack
+                 (otherwise
+                    [Names.runtime; Names.default_module]
+                    !PPEnv.specified_default_module)
+                 [Names.runtime; Names.default_module_sig];
+               untyped]
+          in
+          if arity = arg_count then
+            (* id 1 2 3 ==> (wrap id) 1 2 3 *)
+            wrapped
+          else
+            (* id 1 2 ==> (fun a b c -> (wrap id) a b c) 1 2 *)
+            Untyped.eta_abstract (arity - arg_count) wrapped
       in
       untyped', check untyped'
   | _ -> untyped, typed

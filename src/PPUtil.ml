@@ -10,6 +10,7 @@ module Names = struct
   let runtime = "PolyPrint"
   let printers = "Printers"
   let default_module = "DefaultTraceConfig"
+  let default_module_sig = "TraceConfig"
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
   let debug = "debug"
@@ -105,6 +106,14 @@ let dummy_loc = {
   Location.loc_ghost = true
 }
 
+let to_longident p =
+  let rec aux p =
+    match p with
+    | [] -> assert false
+    | [x] -> Lident x
+    | x :: xs -> Ldot (aux xs, x)
+  in aux (List.rev p)
+
 module Untyped = struct
 
   open Ast_helper
@@ -131,11 +140,19 @@ module Untyped = struct
 
   let qualified_ident ?(loc=dummy_loc) ss =
     match ss with
-    | [] -> failwith "empty dotted identifier"
+    | [] -> failwith "qualified_ident requires a non-empty list"
     | [s] -> ident s
     | s :: ss ->
         let res = List.fold_left (fun t c -> Ldot (t, c)) (Lident s) ss in
         Exp.ident ~loc { txt = res; loc }
+
+  let pack ?(loc=dummy_loc) module_name sig_name =
+    Exp.constraint_
+    (Exp.pack {
+      pmod_desc = Pmod_ident { txt = to_longident module_name; loc };
+      pmod_loc = loc;
+      pmod_attributes = []
+    }) (Typ.package ({ txt = to_longident sig_name; loc }) [])
 
   let is_function_binding b =
     match b with
@@ -223,6 +240,12 @@ module Untyped = struct
     match n with
     | 0 -> body
     | _ -> Exp.fun_ ~loc "" None pat_any (fun_wildcards ~loc (n - 1) body)
+
+  let location loc =
+    Exp.tuple ~loc [
+      Exp.ident ~loc { txt = Lident "__FILE__"; loc };
+      Exp.ident ~loc { txt = Lident "__LINE__"; loc }
+    ]
 
   let rec longident_to_list li =
     match li with
@@ -318,14 +341,6 @@ module Typed = struct
       | [] -> assert false
       | [x] -> pident x
       | x :: xs -> pdot (aux xs) x
-    in aux (List.rev p)
-
-  let to_longident p =
-    let rec aux p =
-      match p with
-      | [] -> assert false
-      | [x] -> Lident x
-      | x :: xs -> Ldot (aux xs, x)
     in aux (List.rev p)
 
   let tident name =
