@@ -91,12 +91,12 @@ let truncate n s =
   else String.sub s 0 n ^ "..."
 
 let tap msg action x =
-  print_string @@ msg ^ ": ";
+  print_string @@ msg ^ " ";
   action x;
   x
 
 let taps msg x =
-  print_endline @@ msg ^ ": ";
+  print_endline msg;
   x
 
 let dummy_loc = {

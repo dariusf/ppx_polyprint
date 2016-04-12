@@ -132,6 +132,11 @@ module Make = struct
     let rev_ppxs = ref []
     let add_ppx s = rev_ppxs := s :: !rev_ppxs
 
+    let dump_if_debug_mode exp =
+      if !PPEnv.debug_mode then
+        PPUtil.tap "Final output:" PPUtil.Untyped.print_structure exp
+      else exp
+
     (* The PPX mapper *)
 
     let mapper = match Ast_mapper.tool_name () with
@@ -152,6 +157,7 @@ module Make = struct
             |> dump_str !dump_untype
             |> Embed.mapper.structure Embed.mapper
             |> lastUntypedTransformation.structure lastUntypedTransformation
+            |> dump_if_debug_mode
             |> Pparse.apply_rewriters_str ~tool_name
           in
           let signature _x sg =

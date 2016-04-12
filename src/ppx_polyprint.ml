@@ -37,4 +37,5 @@ module Main = PPDriver.Make.F(struct
   end)
 
 let () =
+  PPEnv.init ();
   Main.run ();
