@@ -24,7 +24,9 @@ module Names = struct
       ignore @@ search_forward (regexp "traced\\([0-7]\\)") name 0;
       matched_group 1 name |> int_of_string
     with Not_found ->
-      failwith @@ sprintf "%s is not a valid name for a traced function type" name
+      printf "%s is not a valid name for a traced function type" name;
+      raise Not_found
+
   let is_traced_type name =
     try
       ignore @@ traced_arity name; true
@@ -148,18 +150,18 @@ module Untyped = struct
   let qualified_ident ?(loc=dummy_loc) ss =
     match ss with
     | [] -> failwith "qualified_ident requires a non-empty list"
-    | [s] -> ident s
+    | [s] -> ident ~loc s
     | s :: ss ->
         let res = List.fold_left (fun t c -> Ldot (t, c)) (Lident s) ss in
         Exp.ident ~loc { txt = res; loc }
 
   let pack ?(loc=dummy_loc) module_name sig_name =
-    Exp.constraint_
-    (Exp.pack {
+    Exp.constraint_ ~loc
+    (Exp.pack ~loc {
       pmod_desc = Pmod_ident { txt = to_longident module_name; loc };
       pmod_loc = loc;
       pmod_attributes = []
-    }) (Typ.package ({ txt = to_longident sig_name; loc }) [])
+    }) (Typ.package ~loc ({ txt = to_longident sig_name; loc }) [])
 
   let is_function_binding b =
     match b with
@@ -224,7 +226,7 @@ module Untyped = struct
     "", param_to_expr ~loc p
 
   let app_variables ?(loc=dummy_loc) f args =
-    Exp.apply ~loc (ident f) (List.map param_to_arg args)
+    Exp.apply ~loc (ident ~loc f) (List.map (param_to_arg ~loc) args)
 
   let rec fun_with_params ?(loc=dummy_loc) params body =
     match params with
@@ -240,7 +242,7 @@ module Untyped = struct
     let make_param s = Param ("_" ^ string_of_int s) in
     let params = range 0 n |> List.map make_param in
     fun_with_params ~loc params
-      (Exp.apply ~loc exp (List.rev params |> List.map param_to_arg))
+      (Exp.apply ~loc exp (List.rev params |> List.map (param_to_arg ~loc)))
 
   (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
   let rec fun_wildcards ?(loc=dummy_loc) n body =

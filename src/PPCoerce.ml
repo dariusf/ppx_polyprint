@@ -71,17 +71,17 @@ let coerce untyped typed arg_count attrs check =
               (Untyped.qualified_ident ~loc
                  [Names.runtime; Names.wrap_n arity])
               [Untyped.location loc;
-               Untyped.pack
+               Untyped.pack ~loc
                  config_module
                  [Names.runtime; Names.default_module_sig];
-               untyped] in
+               untyped] [@metaloc loc] in
 
           if arity = arg_count then
             (* id 1 2 3 ==> (wrap id) 1 2 3 *)
             wrapped
           else
             (* id 1 2 ==> (fun a b c -> (wrap id) a b c) 1 2 *)
-            Untyped.eta_abstract (arity - arg_count) wrapped
+            Untyped.eta_abstract ~loc (arity - arg_count) wrapped
       in
       untyped', check untyped'
   | _ -> untyped, typed
