@@ -33,6 +33,7 @@ let interpret (attrs : Parsetree.attributes) =
     TODO this is difficult to test, given the reliance on the type-checker closure.*)
 let coerce untyped typed arg_count attrs check =
   let constructor, _texprs =
+    (* TODO try to factor out this part *)
     match typed.exp_type.desc with
     | Tconstr (path_t, texprs, abbrev) ->
         begin

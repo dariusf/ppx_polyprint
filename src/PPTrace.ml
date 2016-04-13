@@ -84,9 +84,10 @@ let transform_binding_recursively config b =
   let new_rhs = traced_fn ~loc arity @@ fun_with_params ~loc params [%expr
       let [%p pat_var (Names.mangle fn_name)] = [%e nonrec_body] in
       let rec aux =
-        [%e fun_with_params ~loc params
+        [%e traced_fn ~loc arity @@ fun_with_params ~loc params
               (run_invocation ~loc fn_name params config
-                 (app ~loc (ident (Names.mangle fn_name)) [ident "aux"]));
+                 (app ~loc (ident (Names.mangle fn_name))
+                    [eta_abstract ~loc arity (ident ~loc "aux")]))
         ] in [%e app_variables ~loc "aux" params]
     ] [@metaloc loc] in
   { b with pvb_expr = new_rhs }
