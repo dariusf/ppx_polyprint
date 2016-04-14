@@ -242,7 +242,7 @@ module Untyped = struct
     let make_param s = Param ("_" ^ string_of_int s) in
     let params = range 0 n |> List.map make_param in
     fun_with_params ~loc params
-      (Exp.apply ~loc exp (List.rev params |> List.map (param_to_arg ~loc)))
+      (Exp.apply ~loc exp (params |> List.map (param_to_arg ~loc)))
 
   (* Returns a lambda with n wildcard parameters, e.g. fun _ _ -> body *)
   let rec fun_wildcards ?(loc=dummy_loc) n body =
