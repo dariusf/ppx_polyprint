@@ -195,10 +195,7 @@ Given all these caveats, the design of this portion of the library should be con
 - Install dependencies (manually, for now)
 
 ```
-opam install ppx_tools typpx alcotest yojson
-
-# optional
-opam install ppx_deriving
+opam install ppx_tools typpx alcotest ppx_deriving
 ```
 
 - `make test` to check that everything works.
