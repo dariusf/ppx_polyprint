@@ -12,5 +12,10 @@ let rec roll n =
   | n -> roll (n - 1)
   [@@tracerec Recursive]
 
+let rec fib n =
+  if n <= 1 then 1 else fib (n - 1) + fib (n - 2)
+  [@@tracerec Minimal]
+
 let () =
-  roll 5
+  roll 5;
+  ignore @@ fib 5

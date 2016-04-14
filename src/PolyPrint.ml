@@ -323,44 +323,6 @@ module Printers = struct
     fprintf fmt "(%a, %a, %a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d pr_e e pr_f f
   let pp_tuple7 pr_a pr_b pr_c pr_d pr_e pr_f pr_g fmt (a, b, c, d, e, f, g) =
     fprintf fmt "(%a, %a, %a, %a, %a, %a, %a)" pr_a a pr_b b pr_c c pr_d d pr_e e pr_f f pr_g g
-
-  (* let string_of_tvar name _ = *)
-  (*   match name with *)
-  (*   | "" -> "<polymorphic>" *)
-  (*   | v -> "'" ^ v *)
-
-  (* let string_of_option pr x = *)
-  (*   match x with *)
-  (*   | Some s -> "Some " ^ pr s *)
-  (*   | None -> "None" *)
-
-  (* let string_of_ref pr x = "ref " ^ pr !x *)
-
-  (* let string_of_list pr xs = *)
-  (*   let rec aux xs = *)
-  (*     match xs with *)
-  (*     | [] -> "" *)
-  (*     | [x] -> pr x *)
-  (*     | y :: ys -> pr y ^ "; " ^ aux ys *)
-  (*   in "[" ^ aux xs ^ "]" *)
-
-  (* let string_of_function _ = "<function>" *)
-
-  (* open Printf *)
-
-  (* let string_of_tuple pr_a pr_b (a, b) = *)
-  (*   sprintf "(%s, %s)" (pr_a a) (pr_b b) *)
-  (* let string_of_tuple3 pr_a pr_b pr_c (a, b, c) = *)
-  (*   sprintf "(%s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) *)
-  (* let string_of_tuple4 pr_a pr_b pr_c pr_d (a, b, c, d) = *)
-  (*   sprintf "(%s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) *)
-  (* let string_of_tuple5 pr_a pr_b pr_c pr_d pr_e (a, b, c, d, e) = *)
-  (*   sprintf "(%s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) *)
-  (* let string_of_tuple6 pr_a pr_b pr_c pr_d pr_e pr_f (a, b, c, d, e, f) = *)
-  (*   sprintf "(%s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) *)
-  (* let string_of_tuple7 pr_a pr_b pr_c pr_d pr_e pr_f pr_g (a, b, c, d, e, f, g) = *)
-  (*   sprintf "(%s, %s, %s, %s, %s, %s, %s)" (pr_a a) (pr_b b) (pr_c c) (pr_d d) (pr_e e) (pr_f f) (pr_g g) *)
-
 end
 
 type ('a, 'b) traced1 = Traced1 of ('a -> 'b)

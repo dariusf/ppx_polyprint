@@ -57,3 +57,14 @@ module Recursive : PolyPrint.TraceConfig = struct
   let act = new api
 end
 
+module Minimal : PolyPrint.TraceConfig = struct
+  class api = object (self)
+    inherit Recursive.api
+
+    method fn name = name ^ ""
+    method arg _ value = value
+    method result _ value = "= " ^ value
+  end
+
+  let act = new api
+end
