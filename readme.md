@@ -21,19 +21,21 @@ print "true"
 => true
 
 print (false, 1)
-=> "(false, 1)"
+=> (false, 1)
 ```
 
 This may seem magical, but it's actually being replaced at compile-time with the appropriate monomorphic printer.
 
-There's `show` (and its aliases `to_string` and `string_of`), which returns a string representation of a value:
+`show` returns a string representation of a value.
 
 ```ocaml
 print_endline (show 1)
 => 1
 ```
 
-There's also `debug`, which is like `print`, but outputs a representation of the expression it was passed.
+`to_string` and `string_of` are aliases for `show`.
+
+`debug` is like `print`, but outputs a representation of its argument in addition to its value.
 
 ```ocaml
 let a = 1 in
@@ -52,7 +54,7 @@ let rec fact n =
   [@@tracerec]
 ```
 
-Here's the default output of `fact 5` with `[@@tracerec]`, which tracks all recursive calls:
+Here's the default output of `fact 5` with `[@@tracerec]`, which tracks all recursive calls.
 
 ```
 fact <- n = 5
@@ -73,7 +75,7 @@ The magic functions from earlier will be used to automatically figure out printe
 
 For some type `Module.t`, the printer that will be used is `Module.show_t`, following the conventions used by ppx_deriving. If this heuristic isn't sufficient, the printer name can be supplied manually (see below).
 
-Let-bindings in expression and structure context are annotated differently:
+Let-bindings in expression and structure context are annotated differently.
 
 ```ocaml
 (* structure item *)
@@ -100,7 +102,7 @@ and minus x y = x - y
 
 ### Configuration
 
-Options may be passed to `trace` and `tracerec` to customise how tracing is performed. This forms a small DSL made of a sequence of expressions, each of which corresponding to an item or feature below. Multiple features can be enabled by separating them with `;`. For example, `[@trace Custom; x, y]`.
+`trace` and `tracerec` may be given parameters to customise how tracing is carried out. This forms a small DSL made of a sequence of expressions, each of which corresponding to an item or feature below. Multiple features can be enabled by separating them with `;`. For example, `[@trace Custom; x, y]`.
 
 #### Selectively tracing parameter values
 
@@ -108,11 +110,11 @@ Sometimes the values of only certain parameters are interesting. Which these are
 
 ```ocaml
 (* Only the first two arguments matter *)
-let triple x y z = (x, y, 1)
+let triple x y z = x + y + 1
   [@@trace x, y]
 ```
 
-If the list is empty, all parameters will be included, otherwise only the parameters listed will be.
+If there no parameters specified, all parameters will be included, otherwise only the listed ones will be.
 
 Options can be associated with each identifier, for example, to override the printer to use. This is done by suffixing each identifier with a record.
 
@@ -141,7 +143,7 @@ let plus x y = x + y
   [@@trace Custom]
 ```
 
-Refer to the signature of `TraceConfig` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like printing format), but lower-level control is also possible, allowing the customisation of details like where output goes, what information is added to recursive calls, etc.
+Refer to the signature of `TraceConfig` for API details and documentation on what may be tweaked. A high-level interface is available (for changing things like printing format), but lower-level control is also possible, allowing the customisation of details like where output goes, what information is added to recursive calls, etc. Examples of this may be found [here](examples/configs/src/config.ml).
 
 If you are using a build tool which automatically discovers module dependencies (`ocamldep`/`ocamlbuild`) and the configuration module is in another file, it needs to be referenced from somewhere other than the `[@trace]` annotation for it to be picked up as a dependency. Here's an easy way to ensure this.
 
@@ -152,7 +154,9 @@ open PolyPrint
 module Custom : TraceConfig = struct
   include DefaultTraceConfig
 end
+```
 
+```ocaml
 (* wherever else Custom is passed to [@trace] *)
 open Config
 
@@ -160,35 +164,46 @@ let plus x y = x + y
   [@@trace Custom]
 ```
 
-#### The default annotation (experimental)
+#### The default annotation
 
-*This feature is unstable. See [this](#persistent-state) for caveats arising from its use.*
-
-If we are using the same tracing configuration across a project, it may be useful to specify it in one place, instead of every time we trace a function. The default annotation helps with this:
+If we are using the same configuration module across a file, it may be useful to specify it in one place, instead of in every annotation. The default annotation helps with this.
 
 ```ocaml
 [@@@polyprint Custom]
 ```
 
-This will turn every `[@@trace]` annotation into `[@@trace Custom]`.
+This will turn every `[@@trace]` annotation within a compilation unit into `[@@trace Custom]`.
 
-#### Call site information (experimental)
+The default annotation supplies the module that call sites will use, if none is specified. Details [here](#call-site-information).
 
-*This feature is unstable. See [this](#persistent-state) for caveats arising from its use.*
+#### Call site information
 
-The `calln` functions in `TraceConfig` allow us to intercept calls to traced functions. We may use this to record call site information (for example, where traced functions are called from), or even to modify semantics temporarily for debugging.
+The `call[n]` functions in `TraceConfig` allow us to intercept calls to traced functions. We may use this to record call site information (for example, where traced functions are called from), or even to modify semantics temporarily for debugging.
 
-Currently, function equality is determined by local name: if a function is applied and has the same name as a traced function, it will be wrapped with `calln`. This is a rather crude strategy, so it is advisable to use this only with unique function names pending a more sophisticated analysis.
+Call sites are identified via a type system extension. Annotated functions are given a special internal type, `Traced`, which is isomorphic to a function arrow; it serves only to track whether a function is being traced. At call sites, `Traced` functions will be wrapped with `call[n]`.
 
-#### Persistent state
+Traced functions require a configuration module to invoke `call[n]` on. The easiest way to specify this is via the default annotation.
 
-As certain features of this library require state to be carried across ppx invocations (and ppx was designed to be invoked on compilation units modularly, independently of other compilation units), the configuration environment of the library is persisted to a file.
+```ocaml
+let id x = x
+  [@@traced]
 
-This does not introduce correctness problems when run sequentially (as module dependencies are still captured by `ocamldep`), but parallel compilation may clobber the file. For this reason it is best not to use this library when parallel builds are enabled.
+[@@@polyprint Custom]
 
-Another issue is that of the state becoming stale. This may actually be useful when files are not rebuilt and processed during compilation, allowing their configuration to persist, but makes it difficult to remove annotations without deleting the file and doing a full rebuild.
+id x
+```
 
-Given all these caveats, the design of this portion of the library should be considered very unstable.
+A more granular alternative is to annotate the *application* of a traced function.
+
+```ocaml
+id x [@polyprint Custom]
+```
+
+Recursive, annotated functions invoke a `Traced` function as well (themselves!), and so their definitions may also be given a configuration module (only possible via the default annotation for now).
+
+The `call[n]` functions are given the file and line number in/at which the application occurred, to provide more information in huge logs. In the case of partial application, this is the point at which the function was *first* applied.
+
+**Caveat**: this feature currently does not interact well with Merlin, as Merlin's typechecker does not recognise `Traced` as a function type. The simplest way to get around this is to disable tracing for functions when it isn't needed (by commenting out the annotation).
 
 ## Installation
 
@@ -201,9 +216,9 @@ Given all these caveats, the design of this portion of the library should be con
 opam install ppx_tools typpx alcotest ppx_deriving
 ```
 
-- `make test` to check that everything works.
-- `make up` to build and pin the package.
-- Try building the examples with `make`.
+- `make test` to check that everything works
+- `make up` to build and pin the package
+- Try building the examples with `make`
 
 ### Usage
 
@@ -243,7 +258,7 @@ If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_pol
 
 ## Internals
 
-This project implements a limited form of ad hoc polymorphism.
+This project implements a specialised form of ad hoc polymorphism.
 
 It's difficult to implement a function with type `'a. 'a -> string` meaningfully without constraints on what `'a` may be. Thus, we simply default to something reasonable in polymorphic contexts.
 
@@ -255,6 +270,8 @@ let stringify x =
 stringify 1
 => <polymorphic>
 ```
+
+A more sophisticated scheme could be used (abstracting over polymorphic functions and lifting them out, to be specialised at call sites), but is not implemented.
 
 Typeclasses (see [ppx_implicits](https://bitbucket.org/camlspotter/ppx_implicits)) solve this problem in general. This is a specialisation of typeclasses that happens to be sufficient for printf debugging, and avoids the complexities of passing dictionaries in OCaml. Hopefully, modular implicits will someday obviate the need for this.
 
