@@ -143,7 +143,6 @@ let higher_order =
   ]
 
 module TestConfig = struct
-  include DefaultTraceConfig
 
   let count = ref 0
   let last = ref 0
@@ -157,30 +156,41 @@ module TestConfig = struct
     called := false;
     two_called := false
 
-  let run1 fn_name (a_n, pr_a, a) pr_res f =
-    incr count; last := 1; f a
+  class api = object (self)
+    inherit DefaultTraceConfig.api
 
-  let run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
-    incr count; last := 2; f a b
+    method run1 fn_name (a_n, pr_a, a) pr_res f =
+      incr count; last := 1; f a
 
-  let call1 _ f a =
-    called := true; f a
+    method run2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) pr_res f =
+      incr count; last := 2; f a b
 
-  let call2 _ f a b =
-    two_called := true; f a b
+    method call1 _ f a =
+      called := true; f a
+
+    method call2 _ f a b =
+      two_called := true; f a b
+  end
+
+  let act = new api
 end
 
 module Otherwise = struct
   module Default = struct
-    include DefaultTraceConfig
 
     let called = ref false
 
     let reset () =
       called := false
 
-    let call1 _ f a =
-      called := true; f a
+    class api = object (self)
+      inherit DefaultTraceConfig.api
+
+      method call1 _ f a =
+        called := true; f a
+    end
+
+    let act = new api
   end
 end
 
@@ -285,7 +295,7 @@ let tracing =
      ignore (var_filtering2 1 2 3 4);
      let c = !last = 2 in
      a && b && c);
-    
+
     ("default annotation",
      let [@trace] id x = x in
      Otherwise.Default.reset ();

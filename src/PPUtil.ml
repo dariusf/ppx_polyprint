@@ -15,6 +15,7 @@ module Names = struct
   let to_string = ["to_string"; "string_of"; "show"]
   let print = "print"
   let debug = "debug"
+  let config_obj = "act"
   let run_n n = "run" ^ string_of_int n
   let call_n n = "call" ^ string_of_int n
   let traced_n n = "Traced" ^ string_of_int n

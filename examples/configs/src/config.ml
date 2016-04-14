@@ -1,8 +1,5 @@
 
-[@@@polyprint Recursive]
-
 module Recursive : PolyPrint.TraceConfig = struct
-  include PolyPrint.DefaultTraceConfig
 
   let depth = ref 0
 
@@ -21,62 +18,42 @@ module Recursive : PolyPrint.TraceConfig = struct
     decr depth;
     spaces !depth |> print_string
 
-  let print_result fn_name pr_res res =
-    decr_depth ();
-    PolyPrint.DefaultTraceConfig.print_result fn_name pr_res res
+  class api = object (self)
+    inherit PolyPrint.DefaultTraceConfig.api as super
 
-  let run1 fn_name ((_, _, a) as aa) pr_res fn =
-    incr_depth ();
-    print_args1 fn_name aa;
-    let res = fn a in
-    print_result fn_name pr_res res;
-    res
+    method print_result fn_name pr_res res =
+      decr_depth ();
+      super#print_result fn_name pr_res res
 
-  let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res fn =
-    incr_depth ();
-    print_args2 fn_name aa bb;
-    let res = fn a b in
-    print_result fn_name pr_res res;
-    res
+    method run1 fn_name a pr_res fn =
+      incr_depth ();
+      super#run1 fn_name a pr_res fn
 
-  let run3 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) pr_res fn =
-    incr_depth ();
-    print_args3 fn_name aa bb cc;
-    let res = fn a b c in
-    print_result fn_name pr_res res;
-    res
+    method run2 fn_name a b pr_res fn =
+      incr_depth ();
+      super#run2 fn_name a b pr_res fn
 
-  let run4 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) pr_res fn =
-    incr_depth ();
-    print_args4 fn_name aa bb cc dd;
-    let res = fn a b c d in
-    print_result fn_name pr_res res;
-    res
+    method run3 fn_name a b c pr_res fn =
+      incr_depth ();
+      super#run3 fn_name a b c pr_res fn
 
-  let run5 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) pr_res fn =
-    incr_depth ();
-    print_args5 fn_name aa bb cc dd ee;
-    let res = fn a b c d e in
-    print_result fn_name pr_res res;
-    res
+    method run4 fn_name a b c d pr_res fn =
+      incr_depth ();
+      super#run4 fn_name a b c d pr_res fn
 
-  let run6 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff) pr_res fn =
-    incr_depth ();
-    print_args6 fn_name aa bb cc dd ee ff;
-    let res = fn a b c d e f in
-    print_result fn_name pr_res res;
-    res
+    method run5 fn_name a b c d e pr_res fn =
+      incr_depth ();
+      super#run5 fn_name a b c d e pr_res fn
 
-  let run7 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff)
-      ((_, _, g) as gg) pr_res fn =
-    incr_depth ();
-    print_args7 fn_name aa bb cc dd ee ff gg;
-    let res = fn a b c d e f g in
-    print_result fn_name pr_res res;
-    res
+    method run6 fn_name a b c d e f pr_res fn =
+      incr_depth ();
+      super#run6 fn_name a b c d e f pr_res fn
+
+    method run7 fn_name a b c d e f g pr_res fn =
+      incr_depth ();
+      super#run7 fn_name a b c d e f g pr_res fn
+  end
+
+  let act = new api
 end
 

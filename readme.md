@@ -123,15 +123,18 @@ let triple x y z = (x, y, z)
 
 #### Hooking into the tracing process
 
-Parts of the tracing process may be selectively overridden by passing a module to `trace`. Here's a typical way to do this.
+Parts of the tracing process may be selectively overridden by passing a module (containing an object, for open recursion) to `trace`. Here's a typical way to do this.
 
 ```ocaml
 open PolyPrint
 
 module Custom : TraceConfig = struct
-  include DefaultTraceConfig
+  class api = object (self)
+    inherit DefaultTraceConfig.api
 
-  (* Your customisations here *)
+    (* Your customisations here *)
+  end
+  let act = new api
 end
 
 let plus x y = x + y

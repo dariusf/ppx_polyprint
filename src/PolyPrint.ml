@@ -22,196 +22,233 @@ type loc = file_path * line_number
 
 module type TraceConfig = sig
 
-  (** High-level API, for configuring how tracing is performed. *)
+  class api : object
 
-  val sep : unit -> string
-  val fn : fn_name -> string
-  val arg : param_name -> value -> string
-  val result : fn_name -> value -> string
+    (** High-level API, for configuring how tracing is performed. *)
 
-  (** Low-level API, for tweaks that fundamentally change how function
-      tracing is done. All the different arities need to be implemented
-      for consistency.
+    method sep : string
+    method fn : fn_name -> string
+    method arg : param_name -> value -> string
+    method result : fn_name -> value -> string
 
-      There is no conceptual difference between all these functions of
-      different arity: a function may be of any arity, depending on how
-      many parameters are being tracked. *)
+    (** Low-level API, for tweaks that fundamentally change how function
+        tracing is done. All the different arities need to be implemented
+        for consistency.
 
-  val print_result : string -> 'a printer -> 'a -> unit
+        There is no conceptual difference between all these functions of
+        different arity: a function may be of any arity, depending on how
+        many parameters are being tracked. *)
 
-  val print_args1 : string ->
-    'a param_spec -> unit
-  val print_args2 : string ->
-    'a param_spec ->
-    'b param_spec -> unit
-  val print_args2 : string ->
-    'a param_spec ->
-    'b param_spec -> unit
-  val print_args3 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec -> unit
-  val print_args4 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec -> unit
-  val print_args5 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec -> unit
-  val print_args6 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec ->
-    'f param_spec -> unit
-  val print_args7 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec ->
-    'f param_spec ->
-    'g param_spec -> unit
+    method print_result : 'a . string -> 'a printer -> 'a -> unit
 
-  val run1 : string ->
-    'a param_spec ->
-    'b printer -> ('a -> 'b) -> 'b
-  val run2 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c printer -> ('a -> 'b -> 'c) -> 'c
-  val run3 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd printer -> ('a -> 'b -> 'c -> 'd) -> 'd
-  val run4 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e printer -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e
-  val run5 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec ->
-    'f printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'f
-  val run6 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec ->
-    'f param_spec ->
-    'g printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'g
-  val run7 : string ->
-    'a param_spec ->
-    'b param_spec ->
-    'c param_spec ->
-    'd param_spec ->
-    'e param_spec ->
-    'f param_spec ->
-    'g param_spec ->
-    'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
+    method call1 : 'a 'b . loc ->
+      ('a -> 'b) -> 'a -> 'b
+    method call2 : 'a 'b 'c . loc ->
+      ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
+    method call3 : 'a 'b 'c 'd . loc
+      -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd
+    method call4 : 'a 'b 'c 'd 'e . loc
+      -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e
+    method call5 : 'a 'b 'c 'd 'e 'f . loc
+      -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f
+    method call6 : 'a 'b 'c 'd 'e 'f 'g . loc
+      -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g
+    method call7 : 'a 'b 'c 'd 'e 'f 'g 'h . loc
+      -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
 
-  val call1 : loc -> ('a -> 'b) -> 'a -> 'b
-  val call2 : loc -> ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
-  val call3 : loc -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd
-  val call4 : loc -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e
-  val call5 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f
-  val call6 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g
-  val call7 : loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h
+    method print_args1 : 'a . string ->
+      'a param_spec -> unit
+    method print_args2 : 'a 'b . string ->
+      'a param_spec ->
+      'b param_spec -> unit
+    method print_args3 : 'a 'b 'c . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec -> unit
+    method print_args4 : 'a 'b 'c 'd . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec -> unit
+    method print_args5 : 'a 'b 'c 'd 'e . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec -> unit
+    method print_args6 : 'a 'b 'c 'd 'e 'f . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec ->
+      'f param_spec -> unit
+    method print_args7 : 'a 'b 'c 'd 'e 'f 'g . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec ->
+      'f param_spec ->
+      'g param_spec -> unit
+
+    method run1 : 'a 'b . string ->
+      'a param_spec ->
+      'b printer -> ('a -> 'b) -> 'b
+    method run2 : 'a 'b 'c . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c printer -> ('a -> 'b -> 'c) -> 'c
+    method run3 : 'a 'b 'c 'd . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd printer -> ('a -> 'b -> 'c -> 'd) -> 'd
+    method run4 : 'a 'b 'c 'd 'e . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e printer -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e
+    method run5 : 'a 'b 'c 'd 'e 'f . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec ->
+      'f printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'f
+    method run6 : 'a 'b 'c 'd 'e 'f 'g . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec ->
+      'f param_spec ->
+      'g printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'g
+    method run7 : 'a 'b 'c 'd 'e 'f 'g 'h . string ->
+      'a param_spec ->
+      'b param_spec ->
+      'c param_spec ->
+      'd param_spec ->
+      'e param_spec ->
+      'f param_spec ->
+      'g param_spec ->
+      'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h
+
+  end
+
+  val act : api
 end
 
 module DefaultTraceConfig : TraceConfig = struct
+
   open Printf
 
-  (* TODO demo stubbing these out *)
+  class api = object (self)
 
-  let sep () = " | "
-  let fn name = name ^ " <-"
-  let arg name value = sprintf "%s = %s" name value
-  let result fn_name value = sprintf "%s -> %s" fn_name value
+    method sep = " | "
+    method fn name = name ^ " <-"
+    method arg name value = sprintf "%s = %s" name value
+    method result fn_name value = sprintf "%s -> %s" fn_name value
 
-  let print_result fn_name pr_res res =
-    print_endline (result fn_name (pr_res res))
+    method print_result : 'a . string -> 'a printer -> 'a -> unit =
+      fun fn_name pr_res res ->
+        print_endline (self#result fn_name (pr_res res))
 
-  let print_args1 fn_name (a_n, pr_a, a) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a))])
-  let print_args2 fn_name (a_n, pr_a, a) (b_n, pr_b, b) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b))])
-  let print_args3 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c))])
-  let print_args4 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d))])
-  let print_args5 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e))])
-  let print_args6 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f))])
-  let print_args7 fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) =
-    printf "%s %s\n" (fn fn_name) (String.concat (sep ()) [(arg a_n (pr_a a)); (arg b_n (pr_b b)); (arg c_n (pr_c c)); (arg d_n (pr_d d)); (arg e_n (pr_e e)); (arg f_n (pr_f f)); (arg g_n (pr_g g))])
+    method call1 : 'a 'b . loc -> ('a -> 'b) -> 'a -> 'b =
+      fun _ fn a -> fn a
+    method call2 : 'a 'b 'c . loc -> ('a -> 'b -> 'c) -> 'a -> 'b -> 'c =
+      fun _ fn a b -> fn a b
+    method call3 : 'a 'b 'c 'd . loc -> ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd =
+      fun _ fn a b c -> fn a b c
+    method call4 : 'a 'b 'c 'd 'e . loc -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e =
+      fun _ fn a b c d -> fn a b c d
+    method call5 : 'a 'b 'c 'd 'e 'f . loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f =
+      fun _ fn a b c d e -> fn a b c d e
+    method call6 : 'a 'b 'c 'd 'e 'f 'g . loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g =
+      fun _ fn a b c d e f -> fn a b c d e f
+    method call7 : 'a 'b 'c 'd 'e 'f 'g 'h . loc -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h =
+      fun _ fn a b c d e f g -> fn a b c d e f g
 
-  let run1 fn_name ((_, _, a) as aa) pr_res fn =
-    print_args1 fn_name aa;
-    let res = fn a in
-    print_result fn_name pr_res res;
-    res
+    method print_args1 : 'a . string -> 'a param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a))])
 
-  let run2 fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res fn =
-    print_args2 fn_name aa bb;
-    let res = fn a b in
-    print_result fn_name pr_res res;
-    res
+    method print_args2 : 'a 'b . string -> 'a param_spec -> 'b param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b))])
 
-  let run3 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) pr_res fn =
-    print_args3 fn_name aa bb cc;
-    let res = fn a b c in
-    print_result fn_name pr_res res;
-    res
+    method print_args3 : 'a 'b 'c . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b)); (self#arg c_n (pr_c c))])
 
-  let run4 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) pr_res fn =
-    print_args4 fn_name aa bb cc dd;
-    let res = fn a b c d in
-    print_result fn_name pr_res res;
-    res
+    method print_args4 : 'a 'b 'c 'd . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b)); (self#arg c_n (pr_c c)); (self#arg d_n (pr_d d))])
 
-  let run5 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) pr_res fn =
-    print_args5 fn_name aa bb cc dd ee;
-    let res = fn a b c d e in
-    print_result fn_name pr_res res;
-    res
+    method print_args5 : 'a 'b 'c 'd 'e . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b)); (self#arg c_n (pr_c c)); (self#arg d_n (pr_d d)); (self#arg e_n (pr_e e))])
 
-  let run6 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff) pr_res fn =
-    print_args6 fn_name aa bb cc dd ee ff;
-    let res = fn a b c d e f in
-    print_result fn_name pr_res res;
-    res
+    method print_args6 : 'a 'b 'c 'd 'e 'f . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> 'f param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b)); (self#arg c_n (pr_c c)); (self#arg d_n (pr_d d)); (self#arg e_n (pr_e e)); (self#arg f_n (pr_f f))])
 
-  let run7 fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc)
-      ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff)
-      ((_, _, g) as gg) pr_res fn =
-    print_args7 fn_name aa bb cc dd ee ff gg;
-    let res = fn a b c d e f g in
-    print_result fn_name pr_res res;
-    res
+    method print_args7 : 'a 'b 'c 'd 'e 'f 'g . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> 'f param_spec -> 'g param_spec -> unit =
+      fun fn_name (a_n, pr_a, a) (b_n, pr_b, b) (c_n, pr_c, c) (d_n, pr_d, d) (e_n, pr_e, e) (f_n, pr_f, f) (g_n, pr_g, g) ->
+        printf "%s %s\n" (self#fn fn_name) (String.concat self#sep [(self#arg a_n (pr_a a)); (self#arg b_n (pr_b b)); (self#arg c_n (pr_c c)); (self#arg d_n (pr_d d)); (self#arg e_n (pr_e e)); (self#arg f_n (pr_f f)); (self#arg g_n (pr_g g))])
 
-  let call1 _ fn a = fn a
-  let call2 _ fn a b = fn a b
-  let call3 _ fn a b c = fn a b c
-  let call4 _ fn a b c d = fn a b c d
-  let call5 _ fn a b c d e = fn a b c d e
-  let call6 _ fn a b c d e f = fn a b c d e f
-  let call7 _ fn a b c d e f g = fn a b c d e f g
+    method run1 : 'a 'b . string -> 'a param_spec -> 'b printer -> ('a -> 'b) -> 'b =
+      fun fn_name ((_, _, a) as aa) pr_res fn ->
+        self#print_args1 fn_name aa;
+        let res = fn a in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run2 : 'a 'b 'c . string -> 'a param_spec -> 'b param_spec -> 'c printer -> ('a -> 'b -> 'c) -> 'c =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) pr_res fn ->
+        self#print_args2 fn_name aa bb;
+        let res = fn a b in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run3 : 'a 'b 'c 'd . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd printer -> ('a -> 'b -> 'c -> 'd) -> 'd =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) pr_res fn ->
+        self#print_args3 fn_name aa bb cc;
+        let res = fn a b c in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run4 : 'a 'b 'c 'd 'e . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e printer -> ('a -> 'b -> 'c -> 'd -> 'e) -> 'e =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) ((_, _, d) as dd) pr_res fn ->
+        self#print_args4 fn_name aa bb cc dd;
+        let res = fn a b c d in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run5 : 'a 'b 'c 'd 'e 'f . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> 'f printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'f =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) ((_, _, d) as dd) ((_, _, e) as ee) pr_res fn ->
+        self#print_args5 fn_name aa bb cc dd ee;
+        let res = fn a b c d e in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run6 : 'a 'b 'c 'd 'e 'f 'g . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> 'f param_spec -> 'g printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'g =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff) pr_res fn ->
+        self#print_args6 fn_name aa bb cc dd ee ff;
+        let res = fn a b c d e f in
+        self#print_result fn_name pr_res res;
+        res
+
+    method run7 : 'a 'b 'c 'd 'e 'f 'g 'h . string -> 'a param_spec -> 'b param_spec -> 'c param_spec -> 'd param_spec -> 'e param_spec -> 'f param_spec -> 'g param_spec -> 'h printer -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'h =
+      fun fn_name ((_, _, a) as aa) ((_, _, b) as bb) ((_, _, c) as cc) ((_, _, d) as dd) ((_, _, e) as ee) ((_, _, f) as ff) ((_, _, g) as gg) pr_res fn ->
+        self#print_args7 fn_name aa bb cc dd ee ff gg;
+        let res = fn a b c d e f g in
+        self#print_result fn_name pr_res res;
+        res
+  end
+
+  let act = new api
 end
 
 module Printers = struct
@@ -334,10 +371,10 @@ type ('a, 'b, 'c, 'd, 'e, 'f) traced5 = Traced5 of ('a -> 'b -> 'c -> 'd -> 'e -
 type ('a, 'b, 'c, 'd, 'e, 'f, 'g) traced6 = Traced6 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
 type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h) traced7 = Traced7 of ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
 
-let wrap1 loc (module TC : TraceConfig) (Traced1 fn) a = TC.call1 loc fn a
-let wrap2 loc (module TC : TraceConfig) (Traced2 fn) a b = TC.call2 loc fn a b
-let wrap3 loc (module TC : TraceConfig) (Traced3 fn) a b c = TC.call3 loc fn a b c
-let wrap4 loc (module TC : TraceConfig) (Traced4 fn) a b c d = TC.call4 loc fn a b c d
-let wrap5 loc (module TC : TraceConfig) (Traced5 fn) a b c d e = TC.call5 loc fn a b c d e
-let wrap6 loc (module TC : TraceConfig) (Traced6 fn) a b c d e f = TC.call6 loc fn a b c d e f
-let wrap7 loc (module TC : TraceConfig) (Traced7 fn) a b c d e f g = TC.call7 loc fn a b c d e f g
+let wrap1 loc (module TC : TraceConfig) (Traced1 fn) a = TC.act#call1 loc fn a
+let wrap2 loc (module TC : TraceConfig) (Traced2 fn) a b = TC.act#call2 loc fn a b
+let wrap3 loc (module TC : TraceConfig) (Traced3 fn) a b c = TC.act#call3 loc fn a b c
+let wrap4 loc (module TC : TraceConfig) (Traced4 fn) a b c d = TC.act#call4 loc fn a b c d
+let wrap5 loc (module TC : TraceConfig) (Traced5 fn) a b c d e = TC.act#call5 loc fn a b c d e
+let wrap6 loc (module TC : TraceConfig) (Traced6 fn) a b c d e f = TC.act#call6 loc fn a b c d e f
+let wrap7 loc (module TC : TraceConfig) (Traced7 fn) a b c d e f g = TC.act#call7 loc fn a b c d e f g

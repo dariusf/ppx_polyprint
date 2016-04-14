@@ -58,8 +58,10 @@ let run_invocation ~loc fn_name params config fn =
   let filtered_params = filter_params config.PPConfig.vars params in
   let filtered_param_count = List.length filtered_params in
   assert (filtered_param_count <= List.length params);
-  let run_fn_name = qualified_ident ~loc
-      (config.PPConfig.module_prefix @ [Names.run_n filtered_param_count]) in
+  let run_fn_ident =
+    Exp.send ~loc
+      (qualified_ident ~loc (config.PPConfig.module_prefix @ [Names.config_obj]))
+      (Names.run_n filtered_param_count) in
   let final_fn =
     if filtered_param_count = List.length params
     then fn
@@ -67,7 +69,7 @@ let run_invocation ~loc fn_name params config fn =
       fun_wildcards ~loc
         filtered_param_count
         (app ~loc fn (List.map (param_to_expr ~loc) params)) in
-  let invocation = app ~loc run_fn_name (List.concat [
+  let invocation = app ~loc run_fn_ident (List.concat [
       [str ~loc fn_name];
       List.map (fun p -> Exp.tuple ~loc [
           str ~loc (show_param p);
