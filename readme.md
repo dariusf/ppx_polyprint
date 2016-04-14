@@ -1,5 +1,5 @@
 
-# ppx_polyprint
+# ppx_polyprint [![Build Status](https://travis-ci.org/dariusf/ppx_polyprint.svg)](https://travis-ci.org/dariusf/ppx_polyprint)
 
 A small library for convenient printf debugging and function tracing.
 
