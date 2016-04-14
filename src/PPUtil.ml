@@ -73,6 +73,14 @@ let otherwise default e =
   | None -> default
   | Some x -> x
 
+let rec zip xs ys =
+  match xs, ys with
+  | [], _ | _, [] -> []
+  | x :: xs, y :: ys ->
+      (x, y) :: zip xs ys
+
+let id x = x
+
 let string_of_list pr xs =
   let rec aux xs =
     match xs with
