@@ -30,6 +30,9 @@ test: all
 	rm -rf _build/test/
 	$(OCB) test/$(TEST).byte
 	./$(TEST).byte --show-errors
+	cd examples/minimal && make
+	cd examples/debug.ml && make
+	cd examples/configs && make
 
 doc:
 	$(OCB) -use-ocamlfind doc/api.docdir/index.html \
