@@ -9,13 +9,13 @@ license: "MIT"
 dev-repo: "https://github.com/dariusf/ppx_polyprint"
 depends: [
   "ocamlfind"
-  "alcotest" { >= "0.4.6" }
-  "typpx" { >= "1.1.1" }
-  "ppx_tools" { >= "0.99.1" }
-  "ppx_deriving" { >= "3.3" }
+  "alcotest" { = "0.4.6" }
+  "typpx" { = "1.1.1" }
+  "ppx_tools" { = "4.02.3" }
+  "ppx_deriving" { = "3.3" }
 ]
 install: [[make "install"]]
 remove: [[make "remove"]]
 build: [[make]]
 build-test: [make "test"]
-available: [ocaml-version >= "4.02.3"]
+available: [ocaml-version = "4.02.3"]
