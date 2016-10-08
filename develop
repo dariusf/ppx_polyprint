@@ -1,0 +1,2 @@
+docker build -t polyprint_dev .
+docker run -it -v "$(pwd)":/ppx_polyprint -w /ppx_polyprint "$(docker images -q polyprint_dev)" bash -c 'make up; exec bash'

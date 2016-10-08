@@ -52,9 +52,9 @@ install: all
 remove:
 	ocamlfind remove $(PACKAGE)
 
-up: clean all
+up: clean
 	opam pin add $(PACKAGE) . -n -y
-	opam install $(PACKAGE) --verbose
+	opam install $(PACKAGE) -v -y
 
 down:
 	opam remove $(PACKAGE)

@@ -256,6 +256,16 @@ let () =
 
 If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_polyprint)/ppx_polyprint` to `ocamlfind`.
 
+## Hacking
+
+Docker is the easiest way to hack on this.
+
+```
+./develop
+```
+
+will build an image and drop you into the development environment.
+
 ## Internals
 
 This project implements a specialised form of ad hoc polymorphism.
