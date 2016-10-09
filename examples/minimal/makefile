@@ -5,3 +5,4 @@ all: clean
 
 clean:
 	ocamlbuild -clean
+	rm -f *.byte

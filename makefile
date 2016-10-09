@@ -16,7 +16,7 @@ OCB = ocamlbuild $(OCB_FLAGS)
 
 all: runtime ppx
 
-.PHONY: runtime ppx test citest doc clean
+.PHONY: runtime ppx test examples doc clean
 
 runtime:
 	$(OCB) $(LIB).cma
@@ -31,10 +31,10 @@ test:
 	$(OCB) test/$(TEST).byte
 	./$(TEST).byte --show-errors
 
-citest: test up
-	cd examples/minimal && make
-	cd examples/debug.ml && make
-	cd examples/configs && make
+examples: up
+	for d in examples/*/; do \
+		make -C $$d; \
+	done
 
 doc:
 	$(OCB) -use-ocamlfind doc/api.docdir/index.html \
@@ -46,6 +46,10 @@ doc:
 clean:
 	$(OCB) -clean
 	rm -rf _tests
+	rm -f *.byte
+	for d in examples/*/; do \
+		make -C $$d clean; \
+	done
 
 # opam
 

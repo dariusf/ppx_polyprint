@@ -9,3 +9,4 @@ all: clean
 
 clean:
 	$(OCB) -clean
+	rm -f *.byte
