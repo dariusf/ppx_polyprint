@@ -17,5 +17,5 @@ depends: [
 install: [[make "install"]]
 remove: [[make "remove"]]
 build: [[make]]
-build-test: [make "test"]
+build-test: [make "citest"]
 available: [ocaml-version = "4.02.3"]

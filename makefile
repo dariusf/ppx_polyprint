@@ -16,7 +16,7 @@ OCB = ocamlbuild $(OCB_FLAGS)
 
 all: runtime ppx
 
-.PHONY: runtime ppx test doc clean
+.PHONY: runtime ppx test citest doc clean
 
 runtime:
 	$(OCB) $(LIB).cma
@@ -26,10 +26,12 @@ ppx:
 	$(OCB) $(PACKAGE).native
 	cp $(PACKAGE).native _build/src/$(PACKAGE)
 
-test: up
+test:
 	rm -rf _build/test/
 	$(OCB) test/$(TEST).byte
 	./$(TEST).byte --show-errors
+
+citest: test up
 	cd examples/minimal && make
 	cd examples/debug.ml && make
 	cd examples/configs && make
