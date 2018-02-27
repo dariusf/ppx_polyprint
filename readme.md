@@ -291,5 +291,13 @@ Typeclasses (see [ppx_implicits](https://bitbucket.org/camlspotter/ppx_implicits
 This library is built on [TyPPX](https://bitbucket.org/camlspotter/typpx) and inherits its caveats:
 
 - It cannot be used in the toplevel, or in environments where program phrases are processed in isolation, as it requires access to the full typing environment of a program to insert printers.
-- It is sensitive to the order in which other ppx preprocessors are applied, as it requires a full picture of the typing environment. For example, it should be applied only after something like ppx_deriving, because references to ppx_deriving-generated functions would fail to typecheck if the latter hasn't already run.
+- It is sensitive to the order in which other ppx preprocessors are applied, as it requires a full picture of the typing environment. For example, it should be applied only after something like ppx_deriving, because references to ppx_deriving-generated functions would fail to typecheck if the latter hasn't already run. This is inconvenient because many build tools (ocamlfind, jbuilder) assume ppx processors to be independent of each other and don't allow control over the ordering.
+- It works only with a specific version of the compiler, 4.02.3. [Separate versions must be maintained](https://bitbucket.org/camlspotter/typpx/issues/3/porting-typpx-to-406) for other compilers.
+- Checking types during preprocessing introduces extra dependencies between modules (specifically, the cmi files of dependencies need to be present to preprocess a module). Newer build systems (jbuilder) compile files in parallel and do not support this.
 
+
+Other similar projects:
+
+- [ppx_show](https://github.com/diml/ppx_show)
+- [ocaml_at_p](https://github.com/tsubame-sp/ocaml_at_p)
+- [ppx_debugger](https://github.com/xvw/ppx_debugger)
