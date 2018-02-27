@@ -5,6 +5,8 @@ A small library for convenient printf debugging and function tracing.
 
 Check out the [installation instructions](#installation).
 
+For more details, check out the [project report](report.pdf) or [slides](slides.pdf).
+
 ## Inspecting Values
 
 The API is exceedingly simple. Everything is contained in the module `PolyPrint`, which is suitable for opening at the top of a file.
