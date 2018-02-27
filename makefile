@@ -26,7 +26,7 @@ ppx:
 	$(OCB) $(PACKAGE).native
 	cp $(PACKAGE).native _build/src/$(PACKAGE)
 
-test:
+test: all
 	rm -rf _build/test/
 	$(OCB) test/$(TEST).byte
 	./$(TEST).byte --show-errors

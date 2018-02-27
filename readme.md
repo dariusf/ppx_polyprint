@@ -212,15 +212,24 @@ The `call[n]` functions are given the file and line number in/at which the appli
 `ppx_polyprint` is distributed as a findlib package. It is not yet on opam as it is still unstable, but it should build without much fuss if you want to try it out.
 
 - Clone the repository
-- Install dependencies (manually, for now)
+- Pin the package, which will install dependencies and make the preprocessor available for use:
 
 ```
-opam install ppx_tools typpx alcotest ppx_deriving
+opam pin add ppx_polyprint .
 ```
 
-- `make test` to check that everything works
-- `make up` to build and pin the package
-- Try building the examples with `make`
+- Try running the tests
+
+```
+make test
+```
+
+- Try running the examples with `make`
+
+```
+cd examples/minimal
+make
+```
 
 ### Usage
 
