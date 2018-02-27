@@ -14,9 +14,9 @@ OCB_FLAGS = -use-ocamlfind
 
 OCB = ocamlbuild $(OCB_FLAGS)
 
-all: runtime ppx
+.PHONY: all runtime ppx test examples doc clean
 
-.PHONY: runtime ppx test examples doc clean
+all: runtime ppx
 
 runtime:
 	$(OCB) $(LIB).cma

@@ -211,6 +211,8 @@ The `call[n]` functions are given the file and line number in/at which the appli
 
 `ppx_polyprint` is distributed as a findlib package. It is not yet on opam as it is still unstable, but it should build without much fuss if you want to try it out.
 
+Use a [container](Dockerfile) if you don't want to install this in your local opam repository.
+
 - Clone the repository
 - Pin the package, which will install dependencies and make the preprocessor available for use:
 
@@ -266,16 +268,6 @@ let () =
 ```
 
 If you are not using `ocamlbuild`, pass the flag `-ppx $(ocamlfind query ppx_polyprint)/ppx_polyprint` to `ocamlfind`.
-
-## Hacking
-
-Docker is the easiest way to hack on this.
-
-```
-./develop
-```
-
-will build an image and drop you into the development environment.
 
 ## Internals
 
