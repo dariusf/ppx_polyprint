@@ -1,4 +1,6 @@
 
+This is an old project and has been superceded by [ppx_debug](https://github.com/dariusf/ppx_debug).
+
 # ppx_polyprint [![Build Status](https://travis-ci.org/dariusf/ppx_polyprint.svg)](https://travis-ci.org/dariusf/ppx_polyprint)
 
 A small library for convenient printf debugging and function tracing.
